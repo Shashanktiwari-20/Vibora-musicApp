@@ -8,7 +8,7 @@ const cors = require("cors")
 App.use(Express.json());
 App.use(CookieParser());
 App.use(cors({
-    origin: "http://localhost:5173",
+    origin: "https://vibora-music-app.vercel.app",
     credentials: true
 }));
 
