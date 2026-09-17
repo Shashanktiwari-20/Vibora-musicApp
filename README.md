@@ -173,53 +173,11 @@ Vibora
 
 User
  
-React Frontend
- |
- ⋁
-Redux Toolkit
- |
- ⋁
-Axios API Request
- |
- ⋁
-Express.js Server
-  Validation Middleware
-  Authentication Middleware
-  Authorization Middleware
- |
- ⋁
-Controller
- |
- ⋁
-Mongoose
- |
- ⋁
-MongoDB
+React Frontend -> Redux Toolkit -> Axios API Request -> Express.js Server(Validation Middleware, Authentication Middleware, Authorization Middleware) -> Controller -> Mongoose -> MongoDB
 
 For music uploads:
 
-Artist
- |
- ⋁
-React Form
- |
- ⋁
-Axios
- |
- ⋁
-Express
- |
- ⋁
-Multer
- |
- ⋁
-ImageKit
- |
- ⋁
-Music URL
- |
- ⋁
-MongoDB
+Artist -> React Form -> Axios -> Express -> Multer -> ImageKit -> Music URL -> MongoDB
 ----------------------------------------------------------------------------------------------------------
 
 ## Authentication Flow
