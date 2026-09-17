@@ -27,7 +27,11 @@ const registerUser = async(req,res)=>{
         role,
     })
     const token = jwt.sign({id : user._id,role : user.role},process.env.JWT_SECRET);
-    res.cookie("token",token);
+    res.cookie("token",token,{
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+    });
     return res.status(201).json({
         message : "user registered"
     })
@@ -64,7 +68,11 @@ const loginUser = async(req,res) => {
 
     const token = jwt.sign({id : user._id,role : user.role,username: user.username},process.env.JWT_SECRET);
 
-    res.cookie("token",token);
+    res.cookie("token",token,{
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+    });
 
     return res.status(200).json({
     message: `${username || email} is logged In`,
