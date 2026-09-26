@@ -1,46 +1,18 @@
 const OTP = require("../Models/OTP");
-const {
-    generateOTP,
-    hashOTP,
-    compareHash
-} = require("./tokenService");
-
+const { generateOTP, hashOTP, compareHash} = require("./tokenService");
 const { sendEmailOTP } = require("./emailService");
 
 const OTP_EXPIRY = 5 * 60 * 1000;
 const RESEND_COOLDOWN = 60 * 1000;
 const MAX_ATTEMPTS = 5;
 
-const sendOTP = async ({
-    identifier,
-    channel = "email",
-    purpose,
-    registrationId = null
-}) => {
+const sendOTP = async ({ identifier, channel = "email", purpose, registrationId = null}) => {
     const normalizedIdentifier = identifier.trim().toLowerCase();
+    const latestOTP = await OTP.findOne({ identifier: normalizedIdentifier, purpose, registrationId}).sort({createdAt: -1});
 
-    const latestOTP = await OTP.findOne({
-        identifier: normalizedIdentifier,
-        purpose,
-        registrationId
-    }).sort({
-        createdAt: -1
-    });
-
-    if (
-        latestOTP &&
-        Date.now() - latestOTP.createdAt.getTime() < RESEND_COOLDOWN
-    ) {
-        const remaining = Math.ceil(
-            (
-                RESEND_COOLDOWN -
-                (Date.now() - latestOTP.createdAt.getTime())
-            ) / 1000
-        );
-
-        const error = new Error(
-            `Please wait ${remaining} seconds before requesting another OTP.`
-        );
+    if ( latestOTP && Date.now() - latestOTP.createdAt.getTime() < RESEND_COOLDOWN) {
+        const remaining = Math.ceil(( RESEND_COOLDOWN - (Date.now() - latestOTP.createdAt.getTime())) / 1000);
+        const error = new Error(`Please wait ${remaining} seconds before requesting another OTP.`);
         error.statusCode = 429;
         throw error;
     }
@@ -74,23 +46,9 @@ const sendOTP = async ({
     return otpDocument;
 };
 
-const verifyOTP = async ({
-    identifier,
-    channel = "email",
-    purpose,
-    otp,
-    registrationId = null
-}) => {
+const verifyOTP = async ({ identifier, channel = "email", purpose, otp, registrationId = null}) => {
     const normalizedIdentifier = identifier.trim().toLowerCase();
-
-    const otpDocument = await OTP.findOne({
-        identifier: normalizedIdentifier,
-        purpose,
-        registrationId,
-        usedAt: null
-    }).sort({
-        createdAt: -1
-    });
+    const otpDocument = await OTP.findOne({ identifier: normalizedIdentifier, purpose, registrationId, usedAt: null}).sort({createdAt: -1});
 
     if (!otpDocument) {
         const error = new Error("OTP not found or already verified.");
@@ -110,12 +68,7 @@ const verifyOTP = async ({
         throw error;
     }
 
-    const submittedHash = hashOTP({
-        identifier: normalizedIdentifier,
-        purpose,
-        otp
-    });
-
+    const submittedHash = hashOTP({ identifier: normalizedIdentifier, purpose, otp});
     const isValid = compareHash(submittedHash, otpDocument.otpHash);
 
     if (!isValid) {
@@ -133,7 +86,4 @@ const verifyOTP = async ({
     return true;
 };
 
-module.exports = {
-    sendOTP,
-    verifyOTP
-};
+module.exports = { sendOTP, verifyOTP};

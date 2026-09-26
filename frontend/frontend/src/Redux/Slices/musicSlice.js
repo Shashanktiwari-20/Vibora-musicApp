@@ -1,8 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import api from "../../Services/api";
 
-export const getSongs = createAsyncThunk(
-    "music/getSongs",
+export const getSongs = createAsyncThunk("music/getSongs",
     async (page = 1, { rejectWithValue }) => {
         try {
             const response = await api.get(`/music/Songs?page=${page}`);
@@ -17,8 +16,7 @@ export const getSongs = createAsyncThunk(
     }
 );
 
-export const deleteSong = createAsyncThunk(
-    "music/deleteSong",
+export const deleteSong = createAsyncThunk("music/deleteSong",
     async (id, { rejectWithValue }) => {
         try {
             const response = await api.delete(`/music/deleteMusic/${id}`);

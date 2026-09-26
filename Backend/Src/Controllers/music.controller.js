@@ -356,14 +356,4 @@ const SearchSongs = async (req, res) => {
   }
 };
 
-module.exports = {
-  SearchSongs,
-  createMusic,
-  deleteMusic,
-  createAlbum,
-  editAlbum,
-  deleteAlbum,
-  GetAllSongs,
-  getAllAlbums,
-  getAlbumById
-};
+module.exports = { SearchSongs, createMusic, deleteMusic, createAlbum, editAlbum, deleteAlbum, GetAllSongs, getAllAlbums, getAlbumById};

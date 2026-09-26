@@ -54,10 +54,7 @@ const createSessionAndTokens = async ({ user, req, res }) => {
     lastUsedAt: new Date()
   });
 
-  res.cookie(ACCESS_COOKIE_NAME, refreshToken, {
-    ...refreshCookieOptions,
-    maxAge: 30 * 24 * 60 * 60 * 1000
-  });
+  res.cookie(ACCESS_COOKIE_NAME, refreshToken, {...refreshCookieOptions,maxAge: 30 * 24 * 60 * 60 * 1000  });
 
   return accessToken;
 };
@@ -244,7 +241,6 @@ const completeRegistration = async (req, res) => {
 
     await PendingRegistration.findByIdAndDelete(pending._id);
 
-    // Account created without creating session cookies or access tokens
     return res.status(201).json({
       message: "Registration completed successfully. Please sign in.",
       user: {
@@ -300,11 +296,7 @@ const loginUser = async (req, res) => {
       });
     }
 
-    const accessToken = await createSessionAndTokens({
-      user,
-      req,
-      res
-    });
+    const accessToken = await createSessionAndTokens({ user, req, res});
 
     return res.status(200).json({
       message: "Login successful.",
@@ -394,11 +386,7 @@ const verifyLoginOTP = async (req, res) => {
       otp
     });
 
-    const accessToken = await createSessionAndTokens({
-      user,
-      req,
-      res
-    });
+    const accessToken = await createSessionAndTokens({ user, req, res});
 
     return res.status(200).json({
       message: "OTP login successful.",
@@ -497,10 +485,7 @@ const refreshAccessToken = async (req, res) => {
     session.lastUsedAt = new Date();
     await session.save();
 
-    res.cookie(ACCESS_COOKIE_NAME, newRefreshToken, {
-      ...refreshCookieOptions,
-      maxAge: 30 * 24 * 60 * 60 * 1000
-    });
+    res.cookie(ACCESS_COOKIE_NAME, newRefreshToken, { ...refreshCookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000});
 
     return res.status(200).json({
       authenticated: true,
@@ -527,8 +512,8 @@ const logoutUser = async (req, res) => {
             { revokedAt: new Date() }
           );
         }
-      } catch {
-        // Token already invalid
+      } catch(error) {
+        message : error.message
       }
     }
 
@@ -582,16 +567,4 @@ const getCurrentUser = async (req, res) => {
   }
 };
 
-module.exports = {
-  registerStart,
-  verifyRegisterEmail,
-  resendRegisterOTP,
-  completeRegistration,
-  loginUser,
-  requestLoginOTP,
-  verifyLoginOTP,
-  refreshAccessToken,
-  logoutUser,
-  logoutAllDevices,
-  getCurrentUser
-};
+module.exports = { registerStart, verifyRegisterEmail, resendRegisterOTP, completeRegistration, loginUser, requestLoginOTP, verifyLoginOTP, refreshAccessToken, logoutUser, logoutAllDevices, getCurrentUser};

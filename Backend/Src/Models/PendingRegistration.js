@@ -29,7 +29,7 @@ const pendingRegistrationSchema = new mongoose.Schema(
     expiresAt: {
       type: Date,
       required: true,
-      index: { expires: 0 } // Automatically deletes expired documents
+      index: { expires: 0 } 
     }
   },
   {
@@ -37,7 +37,4 @@ const pendingRegistrationSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model(
-  "PendingRegistration",
-  pendingRegistrationSchema
-);
+module.exports = mongoose.model( "PendingRegistration", pendingRegistrationSchema);

@@ -61,17 +61,12 @@ const AlbumDetails = () => {
 
     if (!currentAlbum) {
         return (
-            <div className="flex min-h-[60vh] items-center justify-center text-zinc-400">
-                Album not found.
-            </div>
+            <div className="flex min-h-[60vh] items-center justify-center text-zinc-400">Album not found.</div>
         );
     }
 
     const currentUserId = user?.id || user?._id;
-    const albumArtistId =
-        typeof currentAlbum.artist === "object"
-            ? currentAlbum.artist?._id || currentAlbum.artist?.id
-            : currentAlbum.artist;
+    const albumArtistId = typeof currentAlbum.artist === "object" ? currentAlbum.artist?._id || currentAlbum.artist?.id : currentAlbum.artist;
 
     const isOwner = Boolean(
         currentUserId &&
@@ -84,12 +79,7 @@ const AlbumDetails = () => {
     return (
         <div className="min-h-full px-4 sm:px-6 py-6 sm:py-8 text-white">
             <div className="mb-6">
-                <Link
-                    to="/albums"
-                    className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-cyan-400 transition-colors"
-                >
-                    ← Back to Albums
-                </Link>
+                <Link to="/albums" className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-cyan-400 transition-colors">← Back to Albums</Link>
             </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-end gap-6 bg-white/5 border border-white/5 rounded-3xl p-6 sm:p-8 backdrop-blur-xl mb-8">
@@ -100,26 +90,12 @@ const AlbumDetails = () => {
                 <div className="flex-1 min-w-0">
                     <p className="text-xs uppercase tracking-widest text-cyan-400 font-semibold mb-2">Album</p>
                     <h1 className="text-3xl sm:text-4xl font-bold truncate mb-2">{currentAlbum.title}</h1>
-                    <p className="text-zinc-400 text-sm">
-                        Created by <span className="text-white font-medium">{currentAlbum.artist?.username || "Unknown Artist"}</span>
-                        {" • "}{tracks.length} track{tracks.length === 1 ? "" : "s"}
-                    </p>
+                    <p className="text-zinc-400 text-sm"> Created by <span className="text-white font-medium">{currentAlbum.artist?.username || "Unknown Artist"}</span> {" • "}{tracks.length} track{tracks.length === 1 ? "" : "s"}</p>
 
                     {isOwner && (
                         <div className="flex items-center gap-3 mt-5">
-                            <Link
-                                to={`/albums/${currentAlbum._id || currentAlbum.id}/edit`}
-                                className="rounded-xl bg-white/10 hover:bg-white/15 px-4 py-2 text-sm font-medium transition-colors"
-                            >
-                                Edit Album
-                            </Link>
-                            <button
-                                type="button"
-                                onClick={handleDelete}
-                                className="rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-400 px-4 py-2 text-sm font-medium transition-colors"
-                            >
-                                Delete Album
-                            </button>
+                            <Link to={`/albums/${currentAlbum._id || currentAlbum.id}/edit`} className="rounded-xl bg-white/10 hover:bg-white/15 px-4 py-2 text-sm font-medium transition-colors"> Edit Album</Link>
+                            <button type="button" onClick={handleDelete} className="rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-400 px-4 py-2 text-sm font-medium transition-colors">Delete Album</button>
                         </div>
                     )}
                 </div>
@@ -127,7 +103,6 @@ const AlbumDetails = () => {
 
             <div>
                 <h2 className="text-xl font-bold mb-4">Tracklist</h2>
-
                 {tracks.length === 0 ? (
                     <div className="rounded-2xl bg-white/5 border border-white/5 p-8 text-center text-zinc-400 text-sm">
                         This album currently has no songs.
@@ -138,25 +113,13 @@ const AlbumDetails = () => {
                             const trackId = track?._id || track?.id || index;
 
                             return (
-                                <div
-                                    key={`${trackId}-${index}`}
-                                    onClick={() => handlePlayTrack(track, index)}
-                                    className="group flex items-center gap-4 rounded-xl bg-white/5 border border-white/5 px-4 py-3 hover:bg-white/10 transition-colors cursor-pointer"
-                                >
-                                    <span className="w-6 text-center text-sm text-zinc-400 group-hover:hidden">
-                                        {index + 1}
-                                    </span>
-                                    <span className="w-6 text-center text-sm text-cyan-400 hidden group-hover:inline-block">
-                                        ▶
-                                    </span>
+                                <div key={`${trackId}-${index}`} onClick={() => handlePlayTrack(track, index)} className="group flex items-center gap-4 rounded-xl bg-white/5 border border-white/5 px-4 py-3 hover:bg-white/10 transition-colors cursor-pointer">
+                                    <span className="w-6 text-center text-sm text-zinc-400 group-hover:hidden"> {index + 1}</span>
+                                    <span className="w-6 text-center text-sm text-cyan-400 hidden group-hover:inline-block">▶</span>
 
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-white truncate group-hover:text-cyan-300 transition-colors">
-                                            {track.title || "Untitled Track"}
-                                        </p>
-                                        <p className="text-xs text-zinc-400 truncate">
-                                            {track.artist?.username || currentAlbum.artist?.username || "Unknown Artist"}
-                                        </p>
+                                        <p className="font-medium text-white truncate group-hover:text-cyan-300 transition-colors">{track.title || "Untitled Track"}</p>
+                                        <p className="text-xs text-zinc-400 truncate">{track.artist?.username || currentAlbum.artist?.username || "Unknown Artist"}</p>
                                     </div>
                                 </div>
                             );

@@ -10,13 +10,13 @@ const albumSchema = new mongoose.Schema(
     musics: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Music", // Matches mongoose.model("Music", ...)
+        ref: "Music",
         required: true
       }
     ],
     artist: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // Matches mongoose.model("User", ...)
+      ref: "User",
       required: true
     }
   },

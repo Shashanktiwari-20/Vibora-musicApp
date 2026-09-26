@@ -14,7 +14,6 @@ const SongCard = ({ song, queue = [] }) => {
         const index = queue.findIndex(
             (item) => item._id === song._id
         );
-
         dispatch(playSong({song,queue,index}));
     };
 
@@ -27,19 +26,12 @@ const SongCard = ({ song, queue = [] }) => {
                     <span className="text-6xl text-white/90">♫</span>
                 </div>
 
-                <button type="button" onClick={handlePlay} className="absolute bottom-3 right-3 w-11 h-11 rounded-full bg-white text-black flex items-center justify-center opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 shadow-xl">
-                    {isCurrentSong && isPlaying ? "Ⅱ" : "▶"}
-                </button>
+                <button type="button" onClick={handlePlay} className="absolute bottom-3 right-3 w-11 h-11 rounded-full bg-white text-black flex items-center justify-center opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 shadow-xl">{isCurrentSong && isPlaying ? "Ⅱ" : "▶"}</button>
             </div>
 
             <div className="pt-3 px-1">
-                <p className="font-semibold truncate">
-                    {song?.title || "Song Title"}
-                </p>
-
-                <p className="text-sm text-zinc-400 truncate mt-1">
-                    {song?.artist?.username || "Artist Name"}
-                </p>
+                <p className="font-semibold truncate">{song?.title || "Song Title"}</p>
+                <p className="text-sm text-zinc-400 truncate mt-1">{song?.artist?.username || "Artist Name"}</p>
             </div>
         </div>
     );

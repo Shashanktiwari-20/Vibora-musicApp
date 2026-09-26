@@ -1,8 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import api from "../../Services/api";
 
-export const searchSongs = createAsyncThunk(
-    "search/searchSongs",
+export const searchSongs = createAsyncThunk("search/searchSongs",
     async (query, { rejectWithValue }) => {
         try {
             const response = await api.get(`/music/Search?query=${encodeURIComponent(query)}`);

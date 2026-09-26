@@ -1,109 +1,86 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import api, { setAccessToken, clearAccessToken } from "../../Services/api";
 
-export const registerStart = createAsyncThunk(
-  "auth/registerStart",
+export const registerStart = createAsyncThunk("auth/registerStart",
   async (data, { rejectWithValue }) => {
     try {
       const response = await api.post("/auth/register/start", data);
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Could not start registration."
-      );
+      return rejectWithValue( error.response?.data?.message || "Could not start registration.");
     }
   }
 );
 
-export const verifyRegisterEmail = createAsyncThunk(
-  "auth/verifyRegisterEmail",
+export const verifyRegisterEmail = createAsyncThunk("auth/verifyRegisterEmail",
   async (data, { rejectWithValue }) => {
     try {
       const response = await api.post("/auth/register/verify-email", data);
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Email verification failed."
-      );
+      return rejectWithValue(error.response?.data?.message || "Email verification failed.");
     }
   }
 );
 
-export const resendRegisterOTP = createAsyncThunk(
-  "auth/resendRegisterOTP",
+export const resendRegisterOTP = createAsyncThunk("auth/resendRegisterOTP",
   async (data, { rejectWithValue }) => {
     try {
       const response = await api.post("/auth/register/resend", data);
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Could not resend OTP."
-      );
+      return rejectWithValue(error.response?.data?.message || "Could not resend OTP.");
     }
   }
 );
 
-export const completeRegistration = createAsyncThunk(
-  "auth/completeRegistration",
+export const completeRegistration = createAsyncThunk("auth/completeRegistration",
   async (data, { rejectWithValue }) => {
     try {
       const response = await api.post("/auth/register/complete", data);
-      // No setAccessToken here so user lands on login page unauthenticated
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Registration failed."
-      );
+      return rejectWithValue(error.response?.data?.message || "Registration failed.");
     }
   }
 );
 
-export const login = createAsyncThunk(
-  "auth/login",
+export const login = createAsyncThunk("auth/login",
   async (data, { rejectWithValue }) => {
     try {
       const response = await api.post("/auth/login", data);
       setAccessToken(response.data.accessToken);
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Login failed."
-      );
+      return rejectWithValue(error.response?.data?.message || "Login failed.");
     }
   }
 );
 
-export const requestLoginOTP = createAsyncThunk(
-  "auth/requestLoginOTP",
+export const requestLoginOTP = createAsyncThunk("auth/requestLoginOTP",
   async (data, { rejectWithValue }) => {
     try {
       const response = await api.post("/auth/login/request-otp", data);
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Could not send OTP."
-      );
+      return rejectWithValue(error.response?.data?.message || "Could not send OTP.");
     }
   }
 );
 
-export const verifyLoginOTP = createAsyncThunk(
-  "auth/verifyLoginOTP",
+export const verifyLoginOTP = createAsyncThunk("auth/verifyLoginOTP",
   async (data, { rejectWithValue }) => {
     try {
       const response = await api.post("/auth/login/verify-otp", data);
       setAccessToken(response.data.accessToken);
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "OTP verification failed."
-      );
+      return rejectWithValue(error.response?.data?.message || "OTP verification failed.");
     }
   }
 );
 
-export const refreshAccessToken = createAsyncThunk(
-  "auth/refreshAccessToken",
+export const refreshAccessToken = createAsyncThunk("auth/refreshAccessToken",
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.post("/auth/refresh");
@@ -120,29 +97,23 @@ export const refreshAccessToken = createAsyncThunk(
       return response.data;
     } catch (error) {
       clearAccessToken();
-      return rejectWithValue(
-        error.response?.data?.message || "Session expired."
-      );
+      return rejectWithValue( error.response?.data?.message || "Session expired.");
     }
   }
 );
 
-export const getCurrentUser = createAsyncThunk(
-  "auth/getCurrentUser",
+export const getCurrentUser = createAsyncThunk("auth/getCurrentUser",
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.get("/auth/me");
       return response.data.user;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Could not get current user."
-      );
+      return rejectWithValue( error.response?.data?.message || "Could not get current user.");
     }
   }
 );
 
-export const initializeAuth = createAsyncThunk(
-  "auth/initializeAuth",
+export const initializeAuth = createAsyncThunk( "auth/initializeAuth",
   async (_, { dispatch, rejectWithValue }) => {
     try {
       const refreshResponse = await dispatch(refreshAccessToken()).unwrap();
@@ -160,10 +131,7 @@ export const initializeAuth = createAsyncThunk(
 
       const user = await dispatch(getCurrentUser()).unwrap();
 
-      return {
-        accessToken,
-        user
-      };
+      return { accessToken, user};
     } catch (error) {
       clearAccessToken();
       return rejectWithValue(error?.message || "Not authenticated.");
@@ -171,8 +139,7 @@ export const initializeAuth = createAsyncThunk(
   }
 );
 
-export const logout = createAsyncThunk(
-  "auth/logout",
+export const logout = createAsyncThunk("auth/logout",
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.post("/auth/logout");
@@ -180,15 +147,12 @@ export const logout = createAsyncThunk(
       return response.data;
     } catch (error) {
       clearAccessToken();
-      return rejectWithValue(
-        error.response?.data?.message || "Logout failed."
-      );
+      return rejectWithValue( error.response?.data?.message || "Logout failed.");
     }
   }
 );
 
-export const logoutAllDevices = createAsyncThunk(
-  "auth/logoutAllDevices",
+export const logoutAllDevices = createAsyncThunk("auth/logoutAllDevices",
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.post("/auth/logout-all");
@@ -196,9 +160,7 @@ export const logoutAllDevices = createAsyncThunk(
       return response.data;
     } catch (error) {
       clearAccessToken();
-      return rejectWithValue(
-        error.response?.data?.message || "Could not logout from all devices."
-      );
+      return rejectWithValue( error.response?.data?.message || "Could not logout from all devices.");
     }
   }
 );
@@ -235,7 +197,6 @@ const authSlice = createSlice({
 
   extraReducers: (builder) => {
     builder
-      // registerStart
       .addCase(registerStart.pending, (state) => {
         state.registrationLoading = true;
         state.error = null;
@@ -250,7 +211,6 @@ const authSlice = createSlice({
         state.error = action.payload;
       })
 
-      // verifyRegisterEmail
       .addCase(verifyRegisterEmail.pending, (state) => {
         state.otpLoading = true;
         state.error = null;
@@ -264,7 +224,6 @@ const authSlice = createSlice({
         state.error = action.payload;
       })
 
-      // resendRegisterOTP
       .addCase(resendRegisterOTP.pending, (state) => {
         state.otpLoading = true;
         state.error = null;
@@ -277,7 +236,6 @@ const authSlice = createSlice({
         state.error = action.payload;
       })
 
-      // completeRegistration (No token persistence)
       .addCase(completeRegistration.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -294,7 +252,6 @@ const authSlice = createSlice({
         state.error = action.payload;
       })
 
-      // login
       .addCase(login.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -309,7 +266,6 @@ const authSlice = createSlice({
         state.error = action.payload;
       })
 
-      // requestLoginOTP
       .addCase(requestLoginOTP.pending, (state) => {
         state.otpLoading = true;
         state.error = null;
@@ -323,7 +279,6 @@ const authSlice = createSlice({
         state.error = action.payload;
       })
 
-      // verifyLoginOTP
       .addCase(verifyLoginOTP.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -339,7 +294,6 @@ const authSlice = createSlice({
         state.error = action.payload;
       })
 
-      // refreshAccessToken
       .addCase(refreshAccessToken.fulfilled, (state, action) => {
         state.accessToken = action.payload.accessToken || null;
       })
@@ -348,7 +302,6 @@ const authSlice = createSlice({
         state.user = null;
       })
 
-      // getCurrentUser
       .addCase(getCurrentUser.fulfilled, (state, action) => {
         state.user = action.payload;
       })
@@ -356,7 +309,6 @@ const authSlice = createSlice({
         state.user = null;
       })
 
-      // initializeAuth
       .addCase(initializeAuth.pending, (state) => {
         state.authChecking = true;
         state.error = null;
@@ -374,7 +326,6 @@ const authSlice = createSlice({
         state.error = null;
       })
 
-      // logout
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
         state.accessToken = null;
@@ -384,7 +335,6 @@ const authSlice = createSlice({
         state.accessToken = null;
       })
 
-      // logoutAllDevices
       .addCase(logoutAllDevices.fulfilled, (state) => {
         state.user = null;
         state.accessToken = null;

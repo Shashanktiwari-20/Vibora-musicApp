@@ -26,48 +26,24 @@ const Navbar = ({ onMenuClick }) => {
                     <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-violet-600 flex items-center justify-center shadow-lg shadow-cyan-950/40">
                         <span className="text-white font-black text-lg">V</span>
                     </div>
-
-                    <span className="hidden sm:block text-xl font-bold tracking-tight">
-                        Vibora
-                    </span>
+                    <span className="hidden sm:block text-xl font-bold tracking-tight">Vibora</span>
                 </button>
 
                 <div className="hidden xl:flex items-center gap-1">
-                    <button type="button" onClick={() => navigate("/")} className="px-3 py-2 rounded-lg text-sm text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">
-                        Home
-                    </button>
-
-                    <button type="button" onClick={() => navigate("/songs")} className="px-3 py-2 rounded-lg text-sm text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">
-                        Songs
-                    </button>
-
-                    <button type="button" onClick={() => navigate("/albums")} className="px-3 py-2 rounded-lg text-sm text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">
-                        Albums
-                    </button>
+                    <button type="button" onClick={() => navigate("/")} className="px-3 py-2 rounded-lg text-sm text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Home</button>
+                    <button type="button" onClick={() => navigate("/songs")} className="px-3 py-2 rounded-lg text-sm text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Songs</button>
+                    <button type="button" onClick={() => navigate("/albums")} className="px-3 py-2 rounded-lg text-sm text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Albums</button>
                 </div>
 
-                <div className="flex-1 min-w-0">
-                    <SearchBar />
-                </div>
+                <div className="flex-1 min-w-0"><SearchBar /></div>
 
                 <div className="flex items-center gap-2 shrink-0">
                     <div className="hidden md:block text-right max-w-32">
-                        <p className="text-sm font-medium truncate">
-                            {user?.username || "User"}
-                        </p>
-
-                        <p className="text-xs text-cyan-400 capitalize">
-                            {user?.role || "user"}
-                        </p>
+                        <p className="text-sm font-medium truncate">{user?.username || "User"}</p>
+                        <p className="text-xs text-cyan-400 capitalize">{user?.role || "user"}</p>
                     </div>
-
-                    <button type="button" onClick={handleLogout} className="hidden sm:block px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-sm text-zinc-300 hover:text-white hover:border-cyan-400/30 hover:bg-cyan-400/10 transition-colors">
-                        Logout
-                    </button>
-
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center font-bold text-sm shadow-lg shadow-cyan-950/30">
-                        {user?.username?.charAt(0)?.toUpperCase() || "U"}
-                    </div>
+                    <button type="button" onClick={handleLogout} className="hidden sm:block px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-sm text-zinc-300 hover:text-white hover:border-cyan-400/30 hover:bg-cyan-400/10 transition-colors">Logout</button>
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center font-bold text-sm shadow-lg shadow-cyan-950/30">{user?.username?.charAt(0)?.toUpperCase() || "U"}</div>
                 </div>
             </div>
         </nav>

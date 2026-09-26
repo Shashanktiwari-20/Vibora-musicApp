@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-
 import {pauseSong,resumeSong,nextSong,previousSong,setVolume} from "../Redux/Slices/playerSlice";
 
 const MusicPlayer = () => {
@@ -149,9 +148,7 @@ const MusicPlayer = () => {
         return `${minutes}:${seconds.toString().padStart(2, "0")}`;
     };
 
-    const progressPercentage = duration
-        ? (currentTime / duration) * 100
-        : 0;
+    const progressPercentage = duration ? (currentTime / duration) * 100 : 0;
 
     return (
         <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-slate-950/96 backdrop-blur-2xl px-3 sm:px-4 py-3">
@@ -165,55 +162,33 @@ const MusicPlayer = () => {
                         </div>
 
                         <div className="min-w-0">
-                            <p className="font-medium truncate text-sm sm:text-base">
-                                {currentSong?.title || "No song playing"}
-                            </p>
-
-                            <p className="text-xs sm:text-sm text-zinc-500 truncate">
-                                {currentSong?.artist?.username || "Choose a song to start listening"}
-                            </p>
+                            <p className="font-medium truncate text-sm sm:text-base">{currentSong?.title || "No song playing"}</p>
+                            <p className="text-xs sm:text-sm text-zinc-500 truncate">{currentSong?.artist?.username || "Choose a song to start listening"}</p>
 
                             {audioError && (
-                                <p className="text-xs text-red-400 truncate">
-                                    {audioError}
-                                </p>
+                                <p className="text-xs text-red-400 truncate">{audioError}</p>
                             )}
                         </div>
                     </div>
 
                     <div className="flex-1 min-w-0 lg:max-w-xl mx-auto">
                         <div className="flex items-center justify-center gap-5 mb-2">
-                            <button type="button" onClick={handlePrevious} disabled={!currentSong} className="text-zinc-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
-                                ↶
-                            </button>
-
-                            <button type="button" onClick={handlePlayPause} disabled={!currentSong} className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 text-white flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-cyan-950/40">
-                                {isPlaying ? "Ⅱ" : "▶"}
-                            </button>
-
-                            <button type="button" onClick={handleNext} disabled={!currentSong || currentIndex >= queue.length - 1} className="text-zinc-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
-                                ↷
-                            </button>
+                            <button type="button" onClick={handlePrevious} disabled={!currentSong} className="text-zinc-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed">↶</button>
+                            <button type="button" onClick={handlePlayPause} disabled={!currentSong} className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 text-white flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-cyan-950/40">{isPlaying ? "Ⅱ" : "▶"}</button>
+                            <button type="button" onClick={handleNext} disabled={!currentSong || currentIndex >= queue.length - 1} className="text-zinc-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed">↷</button>
                         </div>
 
                         <div className="flex items-center gap-2 sm:gap-3 w-full">
-                            <span className="text-[10px] sm:text-xs text-zinc-500 w-8 text-right">
-                                {formatTime(currentTime)}
-                            </span>
-
+                            <span className="text-[10px] sm:text-xs text-zinc-500 w-8 text-right">{formatTime(currentTime)}</span>
                             <div onClick={handleSeek} className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden cursor-pointer">
                                 <div className="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-violet-500 rounded-full transition-[width] duration-100" style={{ width: `${progressPercentage}%` }}></div>
                             </div>
-
-                            <span className="text-[10px] sm:text-xs text-zinc-500 w-8">
-                                {formatTime(duration)}
-                            </span>
+                            <span className="text-[10px] sm:text-xs text-zinc-500 w-8">{formatTime(duration)}</span>
                         </div>
                     </div>
 
                     <div className="hidden lg:flex items-center justify-end gap-3 lg:w-1/3">
                         <span className="text-sm text-zinc-500">🔊</span>
-
                         <input type="range" min="0" max="100" value={volume} onChange={handleVolumeChange} className="w-24 accent-cyan-400 cursor-pointer"/>
                     </div>
                 </div>

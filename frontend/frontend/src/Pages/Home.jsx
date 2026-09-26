@@ -31,25 +31,14 @@ const Home = () => {
                             Welcome to Vibora
                         </p>
 
-                        <h1 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
-                            Your music.
-                            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-300 to-violet-300">
-                                Your vibe.
-                            </span>
-                        </h1>
-
+                        <h1 className="mt-3 text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">Your music.<span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-300 to-violet-300">Your vibe.</span></h1>
                         <p className="mt-4 text-zinc-300 max-w-xl leading-relaxed">
                             Discover songs, explore albums, and create your own listening experience.
                         </p>
 
                         <div className="mt-6 flex flex-wrap gap-3">
-                            <Link to="/songs" className="px-5 py-2.5 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-medium hover:scale-105 transition-transform shadow-lg shadow-cyan-950/30">
-                                Explore Music
-                            </Link>
-
-                            <Link to="/albums" className="px-5 py-2.5 rounded-full bg-white/10 border border-white/10 text-white hover:bg-white/15 transition-colors">
-                                Browse Albums
-                            </Link>
+                            <Link to="/songs" className="px-5 py-2.5 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-medium hover:scale-105 transition-transform shadow-lg shadow-cyan-950/30">Explore Music</Link>
+                            <Link to="/albums" className="px-5 py-2.5 rounded-full bg-white/10 border border-white/10 text-white hover:bg-white/15 transition-colors">Browse Albums</Link>
                         </div>
                     </div>
                 </section>
@@ -66,9 +55,7 @@ const Home = () => {
                             </p>
                         </div>
 
-                        <Link to="/songs" className="text-sm text-zinc-400 hover:text-white transition-colors">
-                            See all
-                        </Link>
+                        <Link to="/songs" className="text-sm text-zinc-400 hover:text-white transition-colors">See all</Link>
                     </div>
 
                     {songs.length > 0 ? (
@@ -96,9 +83,7 @@ const Home = () => {
                             </p>
                         </div>
 
-                        <Link to="/albums" className="text-sm text-zinc-400 hover:text-white transition-colors">
-                            See all
-                        </Link>
+                        <Link to="/albums" className="text-sm text-zinc-400 hover:text-white transition-colors">See all</Link>
                     </div>
 
                     {albums.length > 0 ? (

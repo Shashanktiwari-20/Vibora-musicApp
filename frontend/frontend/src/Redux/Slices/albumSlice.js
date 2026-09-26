@@ -1,12 +1,10 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import api from "../../Services/api";
 
-export const getAlbums = createAsyncThunk(
-    "album/getAlbums",
+export const getAlbums = createAsyncThunk("album/getAlbums",
     async (page = 1, { rejectWithValue }) => {
         try {
             const response = await api.get(`/music/Albums?page=${page}`);
-
             return {
                 Albums: response.data.Albums,
                 pagination: response.data.pagination
@@ -17,12 +15,10 @@ export const getAlbums = createAsyncThunk(
     }
 );
 
-export const getAlbumById = createAsyncThunk(
-    "album/getAlbumById",
+export const getAlbumById = createAsyncThunk("album/getAlbumById",
     async (id, { rejectWithValue }) => {
         try {
             const response = await api.get(`/music/Album/${id}`);
-
             return response.data.album;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || "Failed to fetch album");
@@ -30,12 +26,10 @@ export const getAlbumById = createAsyncThunk(
     }
 );
 
-export const createAlbum = createAsyncThunk(
-    "album/createAlbum",
+export const createAlbum = createAsyncThunk("album/createAlbum",
     async (albumData, { rejectWithValue }) => {
         try {
             const response = await api.post("/music/createAlbum", albumData);
-
             return response.data.album;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || "Failed to create album");
@@ -43,12 +37,10 @@ export const createAlbum = createAsyncThunk(
     }
 );
 
-export const editAlbum = createAsyncThunk(
-    "album/editAlbum",
+export const editAlbum = createAsyncThunk("album/editAlbum",
     async ({ id, albumData }, { rejectWithValue }) => {
         try {
             const response = await api.patch(`/music/editAlbum/${id}`, albumData);
-
             return response.data.album;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || "Failed to edit album");
@@ -56,12 +48,10 @@ export const editAlbum = createAsyncThunk(
     }
 );
 
-export const deleteAlbum = createAsyncThunk(
-    "album/deleteAlbum",
+export const deleteAlbum = createAsyncThunk("album/deleteAlbum",
     async (id, { rejectWithValue }) => {
         try {
             const response = await api.delete(`/music/deleteAlbum/${id}`);
-
             return {
                 id,
                 message: response.data.message
@@ -93,9 +83,7 @@ const albumSlice = createSlice({
         builder
             .addCase(getAlbums.pending, (state, action) => {
                 const page = action.meta.arg;
-
                 state.error = null;
-
                 if (page === 1) {
                     state.loading = true;
                 } else {
