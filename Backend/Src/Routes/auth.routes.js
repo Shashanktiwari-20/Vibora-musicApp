@@ -1,12 +1,34 @@
-const Express = require("express");
-const AuthController = require("../Controllers/Auth.controller")
-const {registerUserValidationRule} = require("../Middlewares/Validation.middleware")
-const Router = Express.Router();
+const express = require("express");
+const router = express.Router();
 
-Router.post("/register",registerUserValidationRule,AuthController.registerUser);
-Router.post("/login",AuthController.loginUser);
-Router.post("/logout",AuthController.LogoutUser);
-Router.get("/me",AuthController.getCurrentUser);
+const {
+  registerStart,
+  verifyRegisterEmail,
+  resendRegisterOTP,
+  completeRegistration,
+  loginUser,
+  requestLoginOTP,
+  verifyLoginOTP,
+  refreshAccessToken,
+  logoutUser,
+  logoutAllDevices,
+  getCurrentUser
+} = require("../Controllers/Auth.controller");
 
+const { authenticateAccessToken } = require("../Middlewares/Auth.middleware");
 
-module.exports = Router
+router.post("/register/start", registerStart);
+router.post("/register/verify-email", verifyRegisterEmail);
+router.post("/register/resend", resendRegisterOTP);
+router.post("/register/complete", completeRegistration);
+
+router.post("/login", loginUser);
+router.post("/login/request-otp", requestLoginOTP);
+router.post("/login/verify-otp", verifyLoginOTP);
+
+router.post("/refresh", refreshAccessToken);
+router.post("/logout", logoutUser);
+router.post("/logout-all", authenticateAccessToken, logoutAllDevices);
+router.get("/me", authenticateAccessToken, getCurrentUser);
+
+module.exports = router;

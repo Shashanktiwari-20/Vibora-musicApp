@@ -1,18 +1,34 @@
-const Express = require("express")
-const App = Express();
-const CookieParser = require("cookie-parser");
-const AuthRoute = require("./Routes/auth.routes")
-const MusicRoute = require("./Routes/Music.routes")
-const cors = require("cors")
+const express = require("express");
+const cookieParser = require("cookie-parser");
+const cors = require("cors");
+const authRoutes = require("./Routes/auth.routes");
+const musicRoutes = require("./Routes/Music.routes");
 
-App.use(Express.json());
-App.use(CookieParser());
-App.use(cors({
-    origin: "https://vibora-music-app.vercel.app",
-    credentials: true
-}));
+const app = express();
+app.set("trust proxy", 1);
 
-App.use("/winterlordmusic/auth",AuthRoute);
-App.use("/winterlordmusic/music",MusicRoute);
+const allowedOrigins = [
+    "http://localhost:5173",
+    "https://vibora-music-app.vercel.app"
+];
 
-module.exports = App
+app.use(
+    cors({
+        origin: function (origin, callback) {
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error("Not allowed by CORS"));
+            }
+        },
+        credentials: true
+    })
+);
+
+app.use(express.json());
+app.use(cookieParser());
+
+app.use("/winterlordmusic/auth", authRoutes);
+app.use("/winterlordmusic/music", musicRoutes);
+
+module.exports = app;

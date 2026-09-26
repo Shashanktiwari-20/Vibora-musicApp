@@ -1,52 +1,56 @@
-import { createSlice,createAsyncThunk, isRejectedWithValue } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import api from "../../Services/api";
 
-export const searchSongs = createAsyncThunk("search/searchSongs",
-    async(query,{RejectWithValue}) =>{
-        try{
+export const searchSongs = createAsyncThunk(
+    "search/searchSongs",
+    async (query, { rejectWithValue }) => {
+        try {
             const response = await api.get(`/music/Search?query=${encodeURIComponent(query)}`);
-            return response.data.songs
-        }
-        catch(err){
-            return RejectWithValue(err.response?.data?.message || "Failed to search songs")
+
+            return response.data.songs || [];
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || "Search failed.");
         }
     }
 );
 
 const initialState = {
-    results : [],
-    loading : false,
-    error : null
+    results: [],
+    loading: false,
+    error: null
 };
 
-const SearchSlice = createSlice({
-    name : "search",
+const searchSlice = createSlice({
+    name: "search",
     initialState,
-    reducers : {
-        clearSearch : (state)=>{
+
+    reducers: {
+        clearSearch: (state) => {
             state.results = [];
             state.loading = false;
             state.error = null;
         }
     },
 
-    extraReducers : (builder) => {
+    extraReducers: (builder) => {
         builder
-        .addCase(searchSongs.pending,(state)=>{
-            state.loading = true;
-            state.error = null;
-        })
-        .addCase(searchSongs.fulfilled,(state,action)=>{
-            state.loading = false;
-            state.results = action.payload;
-        })
-        .addCase(searchSongs.rejected,(state,action)=>{
+            .addCase(searchSongs.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+
+            .addCase(searchSongs.fulfilled, (state, action) => {
+                state.loading = false;
+                state.results = action.payload;
+            })
+
+            .addCase(searchSongs.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
-                state.results = [];
-        });
+            });
     }
 });
 
-export const {clearSearch} = SearchSlice.actions;
-export default SearchSlice.reducer;
+export const { clearSearch } = searchSlice.actions;
+
+export default searchSlice.reducer;

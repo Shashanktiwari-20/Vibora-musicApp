@@ -1,48 +1,113 @@
-import React from "react";
-import { NavLink } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { NavLink, useNavigate } from "react-router-dom";
 
-const Sidebar = () => {
-    const user = useSelector(
-        (state) => state.auth.user
-    );
+import { logout, logoutAllDevices } from "../Redux/Slices/authSlice";
 
-    const linkClass = ({ isActive }) =>`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive?"bg-purple-500/15 text-purple-400":"text-zinc-400 hover:bg-white/5 hover:text-white"}`;
+const Sidebar = ({ isOpen, onClose }) => {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
+    const user = useSelector((state) => state.auth.user);
+
+    const handleLogout = async () => {
+        await dispatch(logout());
+        onClose();
+        navigate("/login");
+    };
+
+    const handleLogoutAll = async () => {
+        const confirmed = window.confirm(
+            "Are you sure you want to logout from all devices?"
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        await dispatch(logoutAllDevices());
+        onClose();
+        navigate("/login");
+    };
+
+    const linkClass = ({ isActive }) =>
+        `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+            isActive
+                ? "bg-gradient-to-r from-cyan-500/20 via-blue-500/15 to-violet-500/20 text-cyan-300 border border-cyan-400/20"
+                : "text-zinc-400 hover:text-white hover:bg-white/5"
+        }`;
 
     return (
-        <aside className="w-64 shrink-0 border-r border-white/10 bg-zinc-950/70 backdrop-blur-xl min-h-[calc(100vh-72px)] p-4">
-            <nav className="space-y-2">
-                <NavLink to="/" end className={linkClass}>
-                    <span>⌂</span>
-                    <span>Home</span>
-                </NavLink>
-                <NavLink to="/songs" className={linkClass}>
-                    <span>♫</span>
-                    <span>Songs</span>
-                </NavLink>
-                <NavLink to="/albums" className={linkClass}>
-                    <span>▣</span>
-                    <span>Albums</span>
-                </NavLink>
-            </nav>
-
-
-            {user?.role === "artist" && (
-                <div className="mt-8">
-                    <p className="px-4 mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-600">Artist</p>
-                    <nav className="space-y-2">
-                        <NavLink to="/create-music" className={linkClass}>
-                            <span>＋</span>
-                            <span>Create Song</span>
-                        </NavLink>
-                        <NavLink to="/create-album" className={linkClass}>
-                            <span>＋</span>
-                            <span>Create Album</span>
-                        </NavLink>
-                    </nav>
-                </div>
+        <>
+            {isOpen && (
+                <button type="button" onClick={onClose} className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm lg:hidden"></button>
             )}
-        </aside>
+
+            <aside className={`fixed lg:sticky top-16 left-0 z-50 lg:z-30 h-[calc(100vh-4rem)] w-[280px] shrink-0 border-r border-white/10 bg-slate-950/98 backdrop-blur-2xl transition-transform duration-300 lg:translate-x-0 ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
+                <div className="h-full flex flex-col p-4">
+                    <div className="flex items-center justify-between lg:hidden mb-5">
+                        <p className="font-semibold text-white">Menu</p>
+
+                        <button type="button" onClick={onClose} className="w-9 h-9 rounded-lg bg-white/5 text-zinc-400 hover:text-white">
+                            ✕
+                        </button>
+                    </div>
+
+                    <div className="space-y-2">
+                        <NavLink to="/" onClick={onClose} className={linkClass}>
+                            <span>⌂</span>
+                            <span>Home</span>
+                        </NavLink>
+
+                        <NavLink to="/songs" onClick={onClose} className={linkClass}>
+                            <span>♫</span>
+                            <span>Songs</span>
+                        </NavLink>
+
+                        <NavLink to="/albums" onClick={onClose} className={linkClass}>
+                            <span>▣</span>
+                            <span>Albums</span>
+                        </NavLink>
+                    </div>
+
+                    {user?.role === "artist" && (
+                        <div className="mt-8">
+                            <p className="px-4 mb-3 text-[11px] uppercase tracking-[0.2em] text-zinc-600 font-semibold">
+                                Artist
+                            </p>
+
+                            <div className="space-y-2">
+                                <NavLink to="/create-music" onClick={onClose} className={linkClass}>
+                                    <span>＋</span>
+                                    <span>Create Song</span>
+                                </NavLink>
+
+                                <NavLink to="/create-album" onClick={onClose} className={linkClass}>
+                                    <span>＋</span>
+                                    <span>Create Album</span>
+                                </NavLink>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="mt-auto pt-5 border-t border-white/10 space-y-2">
+                        <div className="px-4 pb-2">
+                            <p className="text-sm font-medium truncate">{user?.username}</p>
+                            <p className="text-xs text-cyan-400 capitalize">{user?.role}</p>
+                        </div>
+
+                        <button type="button" onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-zinc-300 border border-white/10 bg-white/5 hover:text-white hover:border-cyan-400/30 hover:bg-cyan-400/10 transition-colors">
+                            <span>↪</span>
+                            <span>Logout</span>
+                        </button>
+
+                        <button type="button" onClick={handleLogoutAll} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-300 border border-red-500/20 bg-red-500/5 hover:text-red-200 hover:bg-red-500/10 transition-colors">
+                            <span>⎋</span>
+                            <span>Logout from all devices</span>
+                        </button>
+                    </div>
+                </div>
+            </aside>
+        </>
     );
 };
 

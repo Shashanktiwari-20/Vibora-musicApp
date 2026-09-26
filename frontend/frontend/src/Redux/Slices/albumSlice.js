@@ -1,10 +1,12 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import api from "../../Services/api";
 
-export const getAlbums = createAsyncThunk("album/getAlbums",
+export const getAlbums = createAsyncThunk(
+    "album/getAlbums",
     async (page = 1, { rejectWithValue }) => {
         try {
             const response = await api.get(`/music/Albums?page=${page}`);
+
             return {
                 Albums: response.data.Albums,
                 pagination: response.data.pagination
@@ -15,10 +17,12 @@ export const getAlbums = createAsyncThunk("album/getAlbums",
     }
 );
 
-export const getAlbumById = createAsyncThunk("album/getAlbumById",
+export const getAlbumById = createAsyncThunk(
+    "album/getAlbumById",
     async (id, { rejectWithValue }) => {
         try {
             const response = await api.get(`/music/Album/${id}`);
+
             return response.data.album;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || "Failed to fetch album");
@@ -26,10 +30,12 @@ export const getAlbumById = createAsyncThunk("album/getAlbumById",
     }
 );
 
-export const createAlbum = createAsyncThunk("album/createAlbum",
+export const createAlbum = createAsyncThunk(
+    "album/createAlbum",
     async (albumData, { rejectWithValue }) => {
         try {
-            const response = await api.post("/music/createAlbum",albumData);
+            const response = await api.post("/music/createAlbum", albumData);
+
             return response.data.album;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || "Failed to create album");
@@ -37,10 +43,12 @@ export const createAlbum = createAsyncThunk("album/createAlbum",
     }
 );
 
-export const editAlbum = createAsyncThunk("album/editAlbum",
+export const editAlbum = createAsyncThunk(
+    "album/editAlbum",
     async ({ id, albumData }, { rejectWithValue }) => {
         try {
-            const response = await api.patch(`/music/editAlbum/${id}`,albumData);
+            const response = await api.patch(`/music/editAlbum/${id}`, albumData);
+
             return response.data.album;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || "Failed to edit album");
@@ -48,10 +56,12 @@ export const editAlbum = createAsyncThunk("album/editAlbum",
     }
 );
 
-export const deleteAlbum = createAsyncThunk("album/deleteAlbum",
+export const deleteAlbum = createAsyncThunk(
+    "album/deleteAlbum",
     async (id, { rejectWithValue }) => {
         try {
             const response = await api.delete(`/music/deleteAlbum/${id}`);
+
             return {
                 id,
                 message: response.data.message
@@ -76,12 +86,16 @@ const initialState = {
 const albumSlice = createSlice({
     name: "album",
     initialState,
+
     reducers: {},
+
     extraReducers: (builder) => {
         builder
             .addCase(getAlbums.pending, (state, action) => {
                 const page = action.meta.arg;
+
                 state.error = null;
+
                 if (page === 1) {
                     state.loading = true;
                 } else {
@@ -92,15 +106,17 @@ const albumSlice = createSlice({
             .addCase(getAlbums.fulfilled, (state, action) => {
                 const { Albums, pagination } = action.payload;
                 const page = pagination.page;
+
                 state.loading = false;
                 state.loadingMore = false;
                 state.page = page;
                 state.hasNextPage = pagination.hasNextPage;
                 state.totalAlbums = pagination.totalAlbums;
+
                 if (page === 1) {
                     state.albums = Albums;
                 } else {
-                    state.albums = [...state.albums,...Albums];
+                    state.albums = [...state.albums, ...Albums];
                 }
             })
 
@@ -134,12 +150,15 @@ const albumSlice = createSlice({
 
             .addCase(editAlbum.fulfilled, (state, action) => {
                 const updatedAlbum = action.payload;
+
                 const index = state.albums.findIndex(
                     (album) => album._id === updatedAlbum._id
                 );
+
                 if (index !== -1) {
                     state.albums[index] = updatedAlbum;
                 }
+
                 if (
                     state.currentAlbum &&
                     state.currentAlbum._id === updatedAlbum._id
@@ -152,10 +171,9 @@ const albumSlice = createSlice({
                 state.albums = state.albums.filter(
                     (album) => album._id !== action.payload.id
                 );
-                state.totalAlbums = Math.max(
-                    state.totalAlbums - 1,
-                    0
-                );
+
+                state.totalAlbums = Math.max(state.totalAlbums - 1, 0);
+
                 if (
                     state.currentAlbum &&
                     state.currentAlbum._id === action.payload.id

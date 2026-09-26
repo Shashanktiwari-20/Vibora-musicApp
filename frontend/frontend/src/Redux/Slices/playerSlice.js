@@ -11,9 +11,11 @@ const initialState = {
 const playerSlice = createSlice({
     name: "player",
     initialState,
+
     reducers: {
         playSong: (state, action) => {
             const { song, queue, index } = action.payload;
+
             state.currentSong = song;
             state.queue = queue;
             state.currentIndex = index;
@@ -79,5 +81,6 @@ const playerSlice = createSlice({
     }
 });
 
-export const {playSong,pauseSong,resumeSong,nextSong,previousSong,setVolume,clearPlayer} = playerSlice.actions;
+export const { playSong, pauseSong, resumeSong, nextSong, previousSong, setVolume, clearPlayer } = playerSlice.actions;
+
 export default playerSlice.reducer;

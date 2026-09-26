@@ -1,21 +1,19 @@
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema(
+const pendingRegistrationSchema = new mongoose.Schema(
   {
     username: {
       type: String,
       required: true,
-      unique: true,
       trim: true
     },
     email: {
       type: String,
       required: true,
-      unique: true,
       lowercase: true,
       trim: true
     },
-    password: {
+    passwordHash: {
       type: String,
       required: true
     },
@@ -24,9 +22,14 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "artist"],
       default: "user"
     },
-    isEmailVerified: {
+    emailVerified: {
       type: Boolean,
       default: false
+    },
+    expiresAt: {
+      type: Date,
+      required: true,
+      index: { expires: 0 } // Automatically deletes expired documents
     }
   },
   {
@@ -34,4 +37,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model(
+  "PendingRegistration",
+  pendingRegistrationSchema
+);

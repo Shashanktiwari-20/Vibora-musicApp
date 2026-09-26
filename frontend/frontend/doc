@@ -1,0 +1,2568 @@
+VITE_API_URL=http://localhost:3000/winterlordmusic
+
+import { Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+
+import Login from "./Pages/Login";
+import Register from "./Pages/Register";
+import Home from "./Pages/Home";
+import Songs from "./Pages/Songs";
+import Albums from "./Pages/Albums";
+import AlbumDetails from "./Pages/AlbumDetails";
+import CreateMusic from "./Pages/CreateMusic";
+import CreateAlbum from "./Pages/CreateAlbum";
+import EditAlbum from "./Pages/EditAlbum";
+import ProtectedRoute from "./Components/ProtectedRoute";
+import MainLayout from "./Layouts/MainLayout";
+import { getCurrentUser } from "./Redux/Slices/authSlice";
+
+const App = () => {
+
+    const dispatch = useDispatch();
+
+    const authChecking =
+        useSelector(
+            (state) => state.auth.authChecking
+        );
+
+    useEffect(() => {
+        dispatch(initializeAuth());
+    }, [dispatch]);
+
+    if (authChecking) {
+        return (
+            <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-12 h-12 rounded-full border-4 border-cyan-400/20 border-t-cyan-400 animate-spin mx-auto mb-4"></div>
+
+                    <p className="text-cyan-300 text-sm">
+                        Loading Vibora...
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <Routes>
+
+            <Route
+                path="/login"
+                element={<Login />}
+            />
+
+            <Route
+                path="/register"
+                element={<Register />}
+            />
+
+            <Route
+                element={
+                    <ProtectedRoute>
+                        <MainLayout />
+                    </ProtectedRoute>
+                }
+            >
+                <Route
+                    path="/"
+                    element={<Home />}
+                />
+
+                <Route
+                    path="/songs"
+                    element={<Songs />}
+                />
+
+                <Route
+                    path="/albums"
+                    element={<Albums />}
+                />
+
+                <Route
+                    path="/album/:id"
+                    element={<AlbumDetails />}
+                />
+
+                <Route
+                    path="/create-music"
+                    element={<CreateMusic />}
+                />
+
+                <Route
+                    path="/create-album"
+                    element={<CreateAlbum />}
+                />
+
+                <Route
+                    path="/edit-album/:id"
+                    element={<EditAlbum />}
+                />
+            </Route>
+
+            <Route
+                path="*"
+                element={
+                    <Navigate
+                        to="/"
+                        replace
+                    />
+                }
+            />
+
+        </Routes>
+    );
+};
+
+export default App;
+
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.jsx'
+import { Provider } from 'react-redux'
+import { store } from './Redux/Store.js'
+import { BrowserRouter } from 'react-router-dom'
+
+createRoot(document.getElementById('root')).render(
+    <Provider store={store}>
+    <BrowserRouter>
+    <App />
+    </BrowserRouter>
+    </Provider>,
+)
+
+
+
+import React from "react";
+import { Link } from "react-router-dom";
+
+const AlbumCard = ({ album }) => {
+    return (
+        <Link to={`/albums/${album?._id}`} className="group block bg-white/5 border border-white/10 rounded-2xl p-3 hover:bg-white/10 hover:border-purple-500/30 transition-all duration-300" >
+            <div className="relative aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500">
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-6xl text-white/90">▣</span>
+                </div>
+                <div className="absolute bottom-3 right-3 w-11 h-11 rounded-full bg-white text-black flex items-center justify-center opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 shadow-xl">
+                    ▶
+                </div>
+            </div>
+            <div className="pt-3 px-1">
+                <p className="font-semibold truncate">{album?.title || "Album Title"}</p>
+                <p className="text-sm text-zinc-400 truncate mt-1">{album?.artist?.username || "Artist"}</p>
+            </div>
+        </Link>
+    );
+};
+
+export default AlbumCard;
+
+import React from "react";
+import { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {pauseSong,resumeSong,nextSong,previousSong,setVolume} from "../Redux/Slices/playerSlice";
+
+const MusicPlayer = () => {
+    const dispatch = useDispatch();
+
+    const {currentSong,isPlaying,queue,currentIndex,volume} = useSelector((state) => state.player);
+    const audioRef = useRef(null);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [audioError, setAudioError] = useState("");
+
+    useEffect(() => {
+        if (!currentSong || !audioRef.current) {
+            return;
+        }
+
+        const audio = audioRef.current;
+
+        setAudioError("");
+        setCurrentTime(0);
+        setDuration(0);
+
+        audio.src = currentSong.uri;
+        audio.load();
+    }, [currentSong]);
+
+    useEffect(() => {
+        const audio = audioRef.current;
+
+        if (!audio || !currentSong) {
+            return;
+        }
+        if (isPlaying) {
+            audio.play().catch((error) => {
+                if (error.name !== "AbortError") {
+                    console.error("Unable to play audio:", error);
+                }
+            });
+        } else {
+            audio.pause();
+        }
+    }, [isPlaying, currentSong]);
+
+    useEffect(() => {
+        if (!audioRef.current) {
+            return;
+        }
+        audioRef.current.volume = volume/100;
+    }, [volume]);
+
+    useEffect(() => {
+        const audio = audioRef.current;
+
+        if (!audio) {
+            return;
+        }
+        const handleLoadedMetadata = () => {
+            setDuration(audio.duration);
+        };
+        const handleTimeUpdate = () => {
+            setCurrentTime(audio.currentTime);
+        };
+        const handleEnded = () => {
+            if (currentIndex < queue.length - 1) {
+                dispatch(nextSong());
+            } else {
+                dispatch(pauseSong());
+                setCurrentTime(0);
+            }
+        };
+
+        const handleError = () => {
+            setAudioError("Unable to load this audio file.");
+        };
+
+        audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+        audio.addEventListener("timeupdate", handleTimeUpdate);
+        audio.addEventListener("ended", handleEnded);
+        audio.addEventListener("error", handleError);
+
+        return () => {
+            audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+            audio.removeEventListener("timeupdate", handleTimeUpdate);
+            audio.removeEventListener("ended", handleEnded);
+            audio.removeEventListener("error", handleError);
+        };
+    }, [dispatch, currentIndex, queue.length]);
+
+    const handlePlayPause = () => {
+        if (!currentSong) {
+            return;
+        }
+        if (isPlaying) {
+            dispatch(pauseSong());
+        } else {
+            dispatch(resumeSong());
+        }
+    };
+
+    const handlePrevious = () => {
+        if (!currentSong) {
+            return;
+        }
+
+        dispatch(previousSong());
+    };
+
+    const handleNext = () => {
+        if (!currentSong) {
+            return;
+        }
+
+        dispatch(nextSong());
+    };
+
+    const handleSeek = (e) => {
+        if (!audioRef.current || !duration) {
+            return;
+        }
+
+        const rect = e.currentTarget.getBoundingClientRect();
+        const clickPosition = e.clientX - rect.left;
+        const percentage = clickPosition / rect.width;
+        const newTime = percentage * duration;
+        audioRef.current.currentTime = newTime;
+        setCurrentTime(newTime);
+    };
+
+    const handleVolumeChange = (e) => {
+        const newVolume = Number(e.target.value);
+        dispatch(setVolume(newVolume));
+    };
+
+    const formatTime = (time) => {
+        if (!time || Number.isNaN(time)) {
+            return "0:00";
+        }
+
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+
+        return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+    };
+
+    const progressPercentage = duration ? (currentTime / duration) * 100 : 0;
+
+    return (
+        <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-zinc-950/95 backdrop-blur-xl px-4 py-3">
+            <audio ref={audioRef} />
+            <div className="max-w-7xl mx-auto flex items-center justify-between gap-6">
+                <div className="flex items-center gap-3 min-w-0 w-1/3">
+                    <div className="w-12 h-12 shrink-0 rounded-xl bg-gradient-to-br from-purple-600 via-fuchsia-500 to-pink-500 flex items-center justify-center">
+                        <span className="text-2xl">♫</span>
+                    </div>
+
+                    <div className="min-w-0">
+                        <p className="font-medium truncate">{currentSong?.title || "No song playing"}</p>
+                        <p className="text-sm text-zinc-500 truncate">{currentSong?.artist?.username || "Choose a song to start listening"}</p>
+                        {audioError && (
+                            <p className="text-xs text-red-400 truncate">{audioError}</p>
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex-1 max-w-xl flex flex-col items-center gap-2">
+                    <div className="flex items-center gap-5">
+                        <button type="button" onClick={handlePrevious} disabled={!currentSong} className="text-zinc-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed">↶</button>
+                        <button type="button" onClick={handlePlayPause} disabled={!currentSong} className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-40 disabled:cursor-not-allowed">{isPlaying ? "Ⅱ" : "▶"}</button>
+                        <button type="button" onClick={handleNext} disabled={!currentSong || currentIndex >= queue.length - 1} className="text-zinc-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed">↷</button>
+                    </div>
+
+                    <div className="flex items-center gap-3 w-full">
+                        <span className="text-xs text-zinc-500 w-8 text-right">{formatTime(currentTime)}</span>
+                        <div onClick={handleSeek} className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden cursor-pointer">
+                            <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-[width] duration-100" style={{ width: `${progressPercentage}%` }}></div>
+                        </div>
+                        <span className="text-xs text-zinc-500 w-8">{formatTime(duration)}</span>
+                    </div>
+                </div>
+
+                <div className="hidden lg:flex items-center justify-end gap-3 w-1/3">
+                    <span className="text-sm text-zinc-500">🔊</span>
+                    <input type="range" min="0" max="100" value={volume} onChange={handleVolumeChange} className="w-24 accent-purple-500 cursor-pointer" />
+                </div>
+            </div>
+        </footer>
+    );
+};
+
+export default MusicPlayer;
+
+import React from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { logoutUser } from "../Redux/Slices/authSlice";
+import SearchBar from "./SearchBar";
+
+const Navbar = () => {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const { user } = useSelector((state) => state.auth);
+
+    const handleLogout = async () => {
+        const result = await dispatch(logoutUser());
+        if (logoutUser.fulfilled.match(result)) {
+            navigate("/login");
+        }
+    };
+
+    return (
+        <nav className="h-16 border-b border-white/10 bg-zinc-950/80 backdrop-blur-xl px-6 sticky top-0 z-40">
+            <div className="h-full max-w-7xl mx-auto flex items-center justify-between gap-6">
+                <button type="button" onClick={() => navigate("/")} className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 via-fuchsia-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-900/30"><span className="text-white font-bold text-lg">V</span></div>
+                    <span className="text-xl font-bold tracking-tight">Vibora</span>
+                </button>
+                <div className="hidden md:flex items-center gap-2">
+                    <button type="button" onClick={() => navigate("/")} className="px-4 py-2 rounded-lg text-sm text-zinc-300 hover:text-white hover:bg-white/5 transition-colors">Home</button>
+                    <button type="button" onClick={() => navigate("/songs")} className="px-4 py-2 rounded-lg text-sm text-zinc-300 hover:text-white hover:bg-white/5 transition-colors">Songs</button>
+                    <button type="button" onClick={() => navigate("/albums")} className="px-4 py-2 rounded-lg text-sm text-zinc-300 hover:text-white hover:bg-white/5 transition-colors">Albums</button>
+                </div>
+
+                <SearchBar />
+
+                <div className="flex items-center gap-3">
+                    <div className="hidden sm:block text-right">
+                        <p className="text-sm font-medium">{user?.username || "User"}</p>
+                        <p className="text-xs text-zinc-500 capitalize">{user?.role || "user"}</p>
+                    </div>
+                    <button type="button" onClick={handleLogout} className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-semibold text-sm hover:scale-105 transition-transform" title="Logout">{user?.username?.charAt(0)?.toUpperCase() || "U"}</button>
+                </div>
+            </div>
+        </nav>
+    );
+};
+
+export default Navbar;
+
+
+
+import { Navigate, useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
+
+const ProtectedRoute = ({ children }) => {
+
+    const user =useSelector((state) => state.auth.user);
+
+    const location = useLocation();
+
+    if (!user) {
+        return (
+            <Navigate
+                to="/login"
+                state={{
+                    from: location.pathname
+                }}
+                replace
+            />
+        );
+    }
+
+    return children;
+};
+
+export default ProtectedRoute;
+
+import React from "react";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { searchSongs, clearSearch } from "../Redux/Slices/SearchSlice";
+import { playSong } from "../Redux/Slices/playerSlice";
+
+const SearchBar = () => {
+    const dispatch = useDispatch();
+    const { results, loading, error } = useSelector(
+        (state) => state.search
+    );
+    const [query, setQuery] = useState("");
+
+    useEffect(() => {
+        const trimmedQuery = query.trim();
+
+        if (!trimmedQuery) {
+            dispatch(clearSearch());
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            dispatch(searchSongs(trimmedQuery));
+        }, 400);
+
+        return () => {
+            clearTimeout(timer);
+        };
+    }, [query, dispatch]);
+
+    const handleChange = (e) => {
+        setQuery(e.target.value);
+    };
+
+    const handleSongClick = (song) => {
+        console.log("SEARCH SONG CLICKED:", song);
+        dispatch(
+            playSong({
+                song,
+                queue: [song],
+                index: 0
+            })
+        );
+
+        setQuery("");
+        dispatch(clearSearch());
+    };
+
+    return (
+        <div className="relative hidden sm:block w-full max-w-md">
+            <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 transition focus-within:border-purple-500/60 focus-within:bg-white/10">
+                <span className="text-lg text-gray-400">🔍</span>
+                <input type="text" value={query} onChange={handleChange} placeholder="Search songs..." className="w-full bg-transparent text-sm text-white outline-none placeholder:text-gray-500" />
+                {loading && (
+                    <span className="text-xs text-gray-500 whitespace-nowrap">Searching...</span>
+                )}
+            </div>
+
+            {query.trim() && (
+                <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-[#18181f] shadow-2xl">
+                    {loading && (
+                        <div className="px-4 py-4 text-sm text-gray-400">Searching songs...</div>
+                    )}
+                    {!loading && error && (
+                        <div className="px-4 py-4 text-sm text-red-400">{error}</div>
+                    )}
+                    {!loading && !error && results.length === 0 && (
+                        <div className="px-4 py-4 text-sm text-gray-400">No songs found</div>
+                    )}
+                    {!loading && !error && results.length > 0 && (
+                        <div className="max-h-80 overflow-y-auto">
+                            {results.map((song) => (
+                                <button type="button" key={song._id} onClick={() => handleSongClick(song)} className="w-full cursor-pointer border-b border-white/5 px-4 py-3 text-left transition hover:bg-white/5">
+                                    <p className="truncate text-sm font-medium text-white">{song.title}</p>
+                                    <p className="mt-1 text-xs text-gray-500">{song.artist?.username || "Unknown artist"}</p>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default SearchBar;
+
+import React from "react";
+import { NavLink } from "react-router-dom";
+import { useSelector } from "react-redux";
+
+const Sidebar = () => {
+    const user = useSelector(
+        (state) => state.auth.user
+    );
+
+    const linkClass = ({ isActive }) =>`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive?"bg-purple-500/15 text-purple-400":"text-zinc-400 hover:bg-white/5 hover:text-white"}`;
+
+    return (
+        <aside className="w-64 shrink-0 border-r border-white/10 bg-zinc-950/70 backdrop-blur-xl min-h-[calc(100vh-72px)] p-4">
+            <nav className="space-y-2">
+                <NavLink to="/" end className={linkClass}>
+                    <span>⌂</span>
+                    <span>Home</span>
+                </NavLink>
+                <NavLink to="/songs" className={linkClass}>
+                    <span>♫</span>
+                    <span>Songs</span>
+                </NavLink>
+                <NavLink to="/albums" className={linkClass}>
+                    <span>▣</span>
+                    <span>Albums</span>
+                </NavLink>
+            </nav>
+
+
+            {user?.role === "artist" && (
+                <div className="mt-8">
+                    <p className="px-4 mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-600">Artist</p>
+                    <nav className="space-y-2">
+                        <NavLink to="/create-music" className={linkClass}>
+                            <span>＋</span>
+                            <span>Create Song</span>
+                        </NavLink>
+                        <NavLink to="/create-album" className={linkClass}>
+                            <span>＋</span>
+                            <span>Create Album</span>
+                        </NavLink>
+                    </nav>
+                </div>
+            )}
+        </aside>
+    );
+};
+
+export default Sidebar;
+
+import React from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { playSong } from "../Redux/Slices/playerSlice";
+
+const SongCard = ({ song, queue = [] }) => {
+    const dispatch = useDispatch();
+    const { currentSong, isPlaying } = useSelector((state) => state.player);
+    const isCurrentSong = currentSong?._id === song?._id;
+
+    const handlePlay = () => {
+        const index = queue.findIndex((item) => item._id === song._id);
+        dispatch(playSong({song, queue, index}));
+    };
+
+    return (
+        <div className="group bg-white/5 border border-white/10 rounded-2xl p-3 hover:bg-white/10 hover:border-purple-500/30 transition-all duration-300 cursor-pointer">
+            <div className="relative aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-purple-600 via-fuchsia-500 to-pink-500">
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-6xl text-white/90">♫</span>
+                </div>
+                <button type="button" onClick={handlePlay} className="absolute bottom-3 right-3 w-11 h-11 rounded-full bg-white text-black flex items-center justify-center opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 shadow-xl">{isCurrentSong && isPlaying ? "Ⅱ" : "▶"}</button>
+            </div>
+            <div className="pt-3 px-1">
+                <p className="font-semibold truncate">{song?.title || "Song Title"}</p>
+                <p className="text-sm text-zinc-400 truncate mt-1">{song?.artist?.username || "Artist Name"}</p>
+            </div>
+        </div>
+    );
+};
+
+export default SongCard;
+
+import React from "react";
+import { Outlet } from "react-router-dom";
+import Navbar from "../Components/Navbar";
+import Sidebar from "../Components/Sidebar";
+import MusicPlayer from "../Components/MusicPlayer";
+
+const MainLayout = () => {
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-purple-950 text-white">
+            <Navbar />
+            <div className="flex">
+                <Sidebar />
+                <main className="flex-1 min-w-0 pb-28 overflow-y-auto">
+                    <Outlet />
+                </main>
+            </div>
+            <MusicPlayer />
+        </div>
+    );
+};
+
+export default MainLayout;
+
+import React from "react";
+import { useEffect } from "react";
+import { Link, useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { getAlbumById } from "../Redux/Slices/albumSlice";
+import { playSong } from "../Redux/Slices/playerSlice";
+
+const AlbumDetails = () => {
+    const { id } = useParams();
+    const dispatch = useDispatch();
+
+    const { currentAlbum, loading, error } = useSelector((state) => state.album);
+
+    useEffect(() => {
+        dispatch(getAlbumById(id));
+    }, [dispatch, id]);
+
+    const handlePlaySong = (song, index) => {
+        if (!currentAlbum?.musics?.length) {
+            return;
+        }
+
+        dispatch(
+            playSong({
+                song: { ...song, artist: currentAlbum.artist },
+                queue: currentAlbum.musics.map((music) => ({...music,artist: currentAlbum.artist})),
+                index
+            })
+        );
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-zinc-400">Loading album...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen flex items-center justify-center px-6">
+                <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-8 text-center max-w-md">
+                    <p className="text-red-400 text-lg font-semibold mb-2">Unable to load album</p>
+                    <p className="text-zinc-400">{typeof error === "string"? error: error?.message || "Album could not be fetched."}</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!currentAlbum) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <p className="text-zinc-400">Album not found.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen px-6 py-8">
+            <div className="max-w-5xl mx-auto">
+                <Link to="/albums" className="inline-flex items-center text-sm text-zinc-400 hover:text-white mb-8 transition-colors">← Back to albums</Link>
+                <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-purple-600/20 via-fuchsia-500/10 to-white/5 p-6 md:p-8">
+                    <div className="flex flex-col md:flex-row gap-7">
+                        <div className="w-full md:w-64 aspect-square shrink-0 rounded-2xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center">
+                            <span className="text-8xl text-white/90">▣</span>
+                        </div>
+                        <div className="flex flex-col justify-end">
+                            <p className="text-sm text-purple-300 uppercase tracking-wider">Album</p>
+                            <h1 className="text-3xl md:text-5xl font-bold mt-2">{currentAlbum.title}</h1>
+                            <p className="text-zinc-400 mt-3">{currentAlbum.artist?.username || "Unknown Artist"}</p>
+                            <p className="text-zinc-500 text-sm mt-2">{currentAlbum.musics?.length || 0} songs</p>
+                        </div>
+                    </div>
+                </section>
+                <section className="mt-8">
+                    <div className="space-y-2">
+                        {currentAlbum.musics?.map((music, index) => (
+                            <div key={music._id || index} className="flex items-center gap-4 p-4 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 transition-colors">
+                                <span className="w-8 text-center text-zinc-500">{index + 1}</span>
+                                <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center">
+                                    <span>♪</span>
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <p className="font-medium truncate">{music.title || `Track ${index + 1}`}</p>
+                                    <p className="text-sm text-zinc-500 truncate">{currentAlbum.artist?.username || "Unknown Artist"}</p>
+                                </div>
+                                <button type="button" onClick={() => handlePlaySong(music, index)} className="w-9 h-9 rounded-full bg-white/10 hover:bg-purple-500 text-white transition-colors">▶</button>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            </div>
+        </div>
+    );
+};
+
+export default AlbumDetails;
+
+
+import React from "react";
+import { useEffect, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import {getAlbums,deleteAlbum} from "../Redux/Slices/albumSlice";
+
+
+const Albums = () => {
+
+    const dispatch = useDispatch();
+    const {albums,page,hasNextPage,loading,loadingMore,error} = useSelector((state) => state.album);
+    const { user } = useSelector((state) => state.auth);
+    const loadMoreRef = useRef(null);
+
+    useEffect(() => {
+        if (albums.length === 0) {
+            dispatch(getAlbums(1));
+        }
+    }, [dispatch, albums.length]);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const target = entries[0];
+                if (target.isIntersecting &&hasNextPage &&!loading &&!loadingMore) {
+                    dispatch(getAlbums(page + 1));
+                }
+            },
+            {threshold: 0.1}
+        );
+        if (loadMoreRef.current) {
+            observer.observe(loadMoreRef.current);
+        }
+        return () => {
+            observer.disconnect();
+        };
+
+    }, [dispatch,page,hasNextPage,loading,loadingMore]);
+
+
+    const handleDeleteAlbum = async (id) => {
+        await dispatch(deleteAlbum(id));
+    };
+
+    if (loading) {
+        return (
+            <div className="flex min-h-[60vh] items-center justify-center text-white">Loading albums...</div>
+        );
+    }
+
+    if (error && albums.length === 0) {
+        return (
+            <div className="flex min-h-[60vh] items-center justify-center text-red-400">{error}</div>
+        );
+    }
+
+
+    return (
+        <div className="min-h-full px-6 py-8 text-white">
+            <div className="mb-8">
+                <h1 className="text-3xl font-bold">Albums</h1>
+                <p className="mt-2 text-gray-400">Explore all available albums</p>
+            </div>
+
+
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {albums.map((album) => (
+                    <div key={album._id} className="group rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:-translate-y-1 hover:bg-white/10">
+                        <Link to={`/albums/${album._id}`}>
+                            <div className="mb-4 flex aspect-square items-center justify-center rounded-xl bg-gradient-to-br from-purple-700/40 to-pink-600/20">
+                                <span className="text-5xl">🎵</span>
+                            </div>
+                            <h2 className="truncate text-lg font-semibold">{album.title}</h2>
+                            <p className="mt-1 text-sm text-gray-400">{album.artist?.username}</p>
+                            <p className="mt-2 text-xs text-gray-500">{album.musics?.length || 0} songs</p>
+                        </Link>
+
+                        {user?._id === album.artist?._id && (
+                            <div className="mt-4 flex gap-2">
+                                <Link to={`/albums/${album._id}/edit`} className="flex-1 rounded-lg bg-white/10 px-3 py-2 text-center text-sm transition hover:bg-white/20">Edit</Link>
+                                <button onClick={() => handleDeleteAlbum(album._id)} className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/20">Delete</button>
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+            <div ref={loadMoreRef} className="flex min-h-20 items-center justify-center">
+                {loadingMore && (
+                    <p className="text-sm text-gray-400">Loading more albums...</p>
+                )}
+
+                {!hasNextPage && albums.length > 0 && (
+                    <p className="text-sm text-gray-500">You've reached the end.</p>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
+export default Albums;import React from "react";
+
+
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import api from "../Services/api";
+
+const CreateAlbum = () => {
+    const navigate = useNavigate();
+    const user = useSelector((state) => state.auth.user);
+    const [songs, setSongs] = useState([]);
+    const [title, setTitle] = useState("");
+    const [selectedSongs, setSelectedSongs] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [songsLoading, setSongsLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+
+    useEffect(() => {
+        const fetchSongs = async () => {
+            try {
+                setSongsLoading(true);
+                const response = await api.get("/music/Songs");
+                setSongs(response.data.songs || []);
+            } catch (error) {
+                setError(
+                    error.response?.data?.message ||
+                    "Unable to fetch songs."
+                );
+            } finally {
+                setSongsLoading(false);
+            }
+        };
+
+        if (user?.role === "artist") {
+            fetchSongs();
+        }
+    }, [user]);
+
+    if (user?.role !== "artist") {
+        return (
+            <div className="min-h-[calc(100vh-72px)] bg-gradient-to-br from-zinc-950 via-zinc-900 to-purple-950 text-white flex items-center justify-center p-6">
+                <div className="text-center">
+                    <p className="text-xl font-semibold">Access denied</p>
+                    <p className="text-zinc-500 mt-2">Only artists can create albums.</p>
+                </div>
+            </div>
+        );
+    }
+
+    const handleSongSelection = (songId) => {
+        setSelectedSongs((prev) =>prev.includes(songId)? prev.filter((id) => id !== songId): [...prev, songId]);
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError("");
+        setSuccess("");
+
+        if (selectedSongs.length === 0) {
+            setError("Please select at least one song.");
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const response = await api.post("/music/createAlbum", {title,musics: selectedSongs});
+            setSuccess(response.data.message);
+            setTitle("");
+            setSelectedSongs([]);
+        } catch (error) {
+            setError(error.response?.data?.message ||"Unable to create album.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="min-h-[calc(100vh-72px)] bg-gradient-to-br from-zinc-950 via-zinc-900 to-purple-950 text-white p-6">
+            <div className="max-w-3xl mx-auto">
+                <div className="mb-8">
+                    <p className="text-3xl font-bold">Create Album</p>
+                    <p className="text-zinc-500 mt-2">Create an album using your uploaded songs.</p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-7 shadow-2xl">
+                    <div>
+                        <label className="block text-sm text-zinc-300 mb-2">Album Title</label>
+                        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="Enter album title" className="w-full px-4 py-3 rounded-xl bg-zinc-900/80 border border-white/10 text-white placeholder:text-zinc-600 outline-none focus:border-purple-500 transition-colors"/>
+                    </div>
+                    <div className="mt-7">
+                        <div className="flex items-center justify-between mb-3">
+                            <label className="text-sm text-zinc-300">Select Songs</label>
+                            <span className="text-xs text-zinc-500">{selectedSongs.length}selected</span>
+                        </div>
+                        {songsLoading ? (<div className="py-10 text-center text-zinc-500">Loading your songs...</div>
+                        ) : songs.length === 0 ? (
+                            <div className="rounded-xl border border-white/10 bg-zinc-900/50 p-6 text-center">
+                                <p className="text-zinc-400">You haven't created any songs yet.</p>
+                                <button type="button" onClick={() => navigate("/create-music")} className="mt-4 text-purple-400 hover:text-purple-300">Create your first song</button>
+                            </div>
+                        ) : (
+                            <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                                {songs.map((song) => {
+                                    const isSelected = selectedSongs.includes(song._id);
+                                    return (
+                                        <label key={song._id} className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${isSelected? "border-purple-500/50 bg-purple-500/10": "border-white/10 bg-zinc-900/40 hover:bg-white/5"}`}>
+                                            <input type="checkbox" checked={isSelected} onChange={() => handleSongSelection(song._id)} className="w-4 h-4 accent-purple-500"/>
+                                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center shrink-0"><span>♫</span></div>
+                                            <div className="min-w-0">
+                                                <p className="font-medium truncate">{song.title}</p>
+                                                <p className="text-xs text-zinc-500">{song.artist?.username || "You"}</p>
+                                            </div>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+
+                    {error && (
+                        <div className="mt-5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
+                            <p className="text-sm text-red-400">{error}</p>
+                        </div>
+                    )}
+                    {success && (
+                        <div className="mt-5 rounded-xl border border-green-500/20 bg-green-500/10 px-4 py-3">
+                            <p className="text-sm text-green-400">{success}</p>
+                        </div>
+                    )}
+                    <button type="submit" disabled={loading || songs.length === 0} className="w-full mt-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all shadow-lg shadow-purple-900/30">{loading ? "Creating..." : "Create Album"}</button>
+                    <button type="button" onClick={() => navigate("/albums")} className="w-full mt-3 py-3 rounded-xl border border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Back to Albums</button>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+export default CreateAlbum;
+
+import React from "react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import api from "../Services/api";
+
+const CreateMusic = () => {
+    const navigate = useNavigate();
+    const user = useSelector((state) => state.auth.user);
+    const [title, setTitle] = useState("");
+    const [music, setMusic] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+
+    if (user?.role !== "artist") {
+        return (
+            <div className="min-h-[calc(100vh-72px)] bg-gradient-to-br from-zinc-950 via-zinc-900 to-purple-950 text-white flex items-center justify-center p-6">
+                <div className="text-center">
+                    <p className="text-xl font-semibold">Access denied</p>
+                    <p className="text-zinc-500 mt-2">Only artists can create songs.</p>
+                </div>
+            </div>
+        );
+    }
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        setError("");
+        setSuccess("");
+        if (!music) {
+            setError("Please select a music file.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("title", title);
+        formData.append("music", music);
+
+        try {
+            setLoading(true);
+            const response = await api.post("/music/createMusic", formData);
+            setSuccess(response.data.message);
+            setTitle("");
+            setMusic(null);
+            e.target.reset();
+        } catch (error) {
+            setError(error.response?.data?.message ||"Unable to create song.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="min-h-[calc(100vh-72px)] bg-gradient-to-br from-zinc-950 via-zinc-900 to-purple-950 text-white p-6">
+            <div className="max-w-2xl mx-auto">
+                <div className="mb-8">
+                    <p className="text-3xl font-bold">Create Song</p>
+                    <p className="text-zinc-500 mt-2">Upload a new song to your music collection.</p>
+                </div>
+                <form onSubmit={handleSubmit} className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-7 shadow-2xl">
+                    <div className="space-y-6">
+                        <div>
+                            <label className="block text-sm text-zinc-300 mb-2">Song Title</label>
+                            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="Enter song title" className="w-full px-4 py-3 rounded-xl bg-zinc-900/80 border border-white/10 text-white placeholder:text-zinc-600 outline-none focus:border-purple-500 transition-colors"/>
+                        </div>
+                        <div>
+                            <label className="block text-sm text-zinc-300 mb-2">Music File</label>
+                            <input type="file" accept="audio/*" onChange={(e) => setMusic(e.target.files[0])} required className="w-full px-4 py-3 rounded-xl bg-zinc-900/80 border border-white/10 text-zinc-300 file:mr-4 file:rounded-lg file:border-0 file:bg-purple-600 file:px-4 file:py-2 file:text-white hover:file:bg-purple-500"/>
+                        </div>
+                    </div>
+                    {error && (
+                        <div className="mt-5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
+                            <p className="text-sm text-red-400">{error}</p>
+                        </div>
+                    )}
+                    {success && (
+                        <div className="mt-5 rounded-xl border border-green-500/20 bg-green-500/10 px-4 py-3">
+                            <p className="text-sm text-green-400">{success}</p>
+                        </div>
+                    )}
+                    <button type="submit" disabled={loading} className="w-full mt-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all shadow-lg shadow-purple-900/30">{loading ? "Uploading..." : "Create Song"}</button>
+                    <button type="button" onClick={() => navigate("/songs")} className="w-full mt-3 py-3 rounded-xl border border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">Back to Songs</button>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+export default CreateMusic;
+
+import React from "react";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { getAlbumById, editAlbum } from "../Redux/Slices/albumSlice";
+import { getSongs } from "../Redux/Slices/musicSlice";
+
+const EditAlbum = () => {
+    const { id } = useParams();
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
+    const user = useSelector(
+        (state) => state.auth.user
+    );
+
+    const {currentAlbum,loading,error} = useSelector((state) => state.album);
+    const { songs } = useSelector(
+        (state) => state.music
+    );
+
+    const [title, setTitle] = useState("");
+    const [selectedSongs, setSelectedSongs] = useState([]);
+    const [saving, setSaving] = useState(false);
+
+    const userId = user?._id || user?.id;
+
+    useEffect(() => {
+        dispatch(getAlbumById(id));
+        dispatch(getSongs());
+    }, [dispatch, id]);
+
+    useEffect(() => {
+        if (currentAlbum) {
+            setTitle(currentAlbum.title || "");
+            setSelectedSongs(currentAlbum.musics?.map((song) => song._id) || []);
+        }
+    }, [currentAlbum]);
+
+    if (user?.role !== "artist") {
+        return (
+            <div className="p-6 text-white">
+                <p className="text-xl font-semibold">Access denied</p>
+            </div>
+        );
+    }
+
+    const isOwner = currentAlbum?.artist?._id === userId;
+
+    if (!loading && currentAlbum && !isOwner) {
+        return (
+            <div className="p-6 text-white">
+                <p className="text-xl font-semibold">You are not the owner of this album.</p>
+            </div>
+        );
+    }
+
+    const handleSongSelection = (songId) => {
+        setSelectedSongs((prev) =>prev.includes(songId)? prev.filter((id) => id !== songId): [...prev, songId]);
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!title.trim()) {
+            return;
+        }
+        if (selectedSongs.length === 0) {
+            return;
+        }
+        setSaving(true);
+        const result = await dispatch(
+            editAlbum({
+                id,
+                albumData: {
+                    title,
+                    musics: selectedSongs
+                }})
+        );
+        setSaving(false);
+        if (editAlbum.fulfilled.match(result)) {
+            navigate(`/albums/${id}`);
+        }
+    };
+
+    if (loading && !currentAlbum) {
+        return (
+            <div className="p-6 text-zinc-500">Loading album...</div>
+        );
+    }
+
+    if (error && !currentAlbum) {
+        return (
+            <div className="p-6 text-red-400">{error?.message || error || "Unable to load album."}</div>
+        );
+    }
+
+    return (
+        <div className="p-6 text-white">
+            <div className="mx-auto max-w-2xl">
+                <div className="mb-8">
+                    <p className="text-3xl font-bold">Edit Album</p>
+                    <p className="mt-2 text-zinc-500">Update your album title and songs.</p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="rounded-3xl border border-white/10 bg-white/5 p-7">
+                    <div>
+                        <label className="mb-2 block text-sm text-zinc-300">Album Title</label>
+                        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required className="w-full rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 outline-none focus:border-purple-500"/>
+                    </div>
+
+                    <div className="mt-7">
+                        <p className="mb-3 text-sm text-zinc-300">Songs</p>
+                        <div className="max-h-80 space-y-2 overflow-y-auto">
+                            {songs.filter((song) =>song.artist?._id === userId).map((song) => {
+                                    const selected = selectedSongs.includes(song._id);
+                                    return (
+                                        <label key={song._id} className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 ${selected? "border-purple-500/50 bg-purple-500/10": "border-white/10 bg-white/5"}`}>
+                                            <input type="checkbox" checked={selected} onChange={() => handleSongSelection(song._id)} className="accent-purple-500"/>
+                                            <span className="flex-1">{song.title}</span>
+                                        </label>
+                                    );
+                                })}
+                        </div>
+                    </div>
+                    {error && (
+                        <p className="mt-4 text-sm text-red-400">{error?.message || error}</p>
+                    )}
+                    <button type="submit" disabled={saving} className="mt-6 w-full rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 py-3 font-semibold disabled:opacity-50">{saving ? "Saving..." : "Save Changes"}</button>
+                    <button type="button" onClick={() => navigate(`/albums/${id}`)} className="mt-3 w-full rounded-xl border border-white/10 py-3 text-zinc-400 hover:text-white">Cancel</button>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+export default EditAlbum;
+
+import React from "react";
+import { useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import SongCard from "../Components/SongCard";
+import AlbumCard from "../Components/AlbumCard";
+import { getSongs } from "../Redux/Slices/musicSlice";
+import { getAlbums } from "../Redux/Slices/albumSlice";
+
+const Home = () => {
+    const dispatch = useDispatch();
+
+    const { songs } = useSelector((state) => state.music);
+    const { albums } = useSelector((state) => state.album);
+
+    useEffect(() => {
+        dispatch(getSongs());
+        dispatch(getAlbums());
+    }, [dispatch]);
+
+    return (
+        <div className="min-h-screen px-6 py-8">
+            <div className="max-w-7xl mx-auto space-y-10">
+                <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-purple-600/30 via-fuchsia-500/10 to-zinc-900 p-8 md:p-10">
+                    <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-purple-500/20 blur-3xl"></div>
+                    <div className="absolute -bottom-24 left-20 w-64 h-64 rounded-full bg-pink-500/10 blur-3xl"></div>
+
+                    <div className="relative max-w-2xl">
+                        <p className="text-sm uppercase tracking-[0.2em] text-purple-300 font-medium">Welcome to Vibora</p>
+                        <h1 className="mt-3 text-3xl md:text-5xl font-bold tracking-tight">Your music.<span className="block text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-pink-300">Your vibe.</span></h1>
+                        <p className="mt-4 text-zinc-300 max-w-xl leading-relaxed">Discover songs, explore albums, and create your own listening experience.</p>
+                        <div className="mt-6 flex flex-wrap gap-3">
+                            <Link to="/songs" className="px-5 py-2.5 rounded-full bg-white text-black font-medium hover:scale-105 transition-transform">Explore Music</Link>
+                            <Link to="/albums" className="px-5 py-2.5 rounded-full bg-white/10 border border-white/10 text-white hover:bg-white/15 transition-colors">Browse Albums</Link>
+                        </div>
+                    </div>
+                </section>
+                <section>
+                    <div className="flex items-center justify-between mb-5">
+                        <div>
+                            <p className="text-sm text-purple-400 font-medium uppercase tracking-wider">Songs</p>
+                            <p className="text-zinc-400 text-sm mt-1">Listen to music available on Vibora.</p>
+                        </div>
+                        <Link to="/songs" className="text-sm text-zinc-400 hover:text-white transition-colors">See all</Link>
+                    </div>
+
+                    {songs.length > 0 ? (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                            {songs.map((song) => (
+                                <SongCard key={song._id} song={song} queue={songs} />
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-zinc-500">No songs available yet.</p>
+                    )}
+                </section>
+                <section>
+                    <div className="flex items-center justify-between mb-5">
+                        <div>
+                            <p className="text-sm text-purple-400 font-medium uppercase tracking-wider">Albums</p>
+                            <p className="text-zinc-400 text-sm mt-1">Explore collections from artists.</p>
+                        </div>
+                        <Link to="/albums" className="text-sm text-zinc-400 hover:text-white transition-colors">See all</Link>
+                    </div>
+                    {albums.length > 0 ? (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                            {albums.map((album) => (
+                                <AlbumCard key={album._id} album={album} />
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-zinc-500">No albums available yet.</p>
+                    )}
+                </section>
+            </div>
+        </div>
+    );
+};
+
+export default Home;
+
+import React from "react";
+import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
+import { loginUser } from "../Redux/Slices/authSlice";
+
+const Login = () => {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
+    const { loading, error } = useSelector((state) => state.auth);
+
+    const [formData, setFormData] = useState({
+        usernameOrEmail: "",
+        password: ""
+    });
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        const isEmail = formData.usernameOrEmail.includes("@");
+
+        const loginData = {
+            username: isEmail ? "" : formData.usernameOrEmail,
+            email: isEmail ? formData.usernameOrEmail : "",
+            password: formData.password
+        };
+
+        const result = await dispatch(loginUser(loginData));
+
+        if (loginUser.fulfilled.match(result)) {
+            navigate("/");
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-purple-950 text-white flex items-center justify-center px-4 py-10">
+            <div className="w-full max-w-md">
+            <div className="text-center mb-8">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-purple-500 via-fuchsia-500 to-pink-500 flex items-center justify-center shadow-xl shadow-purple-900/30">
+                    <span className="text-2xl font-bold">V</span>
+                </div>
+                    <p className="text-2xl font-bold mt-4">Welcome back</p>
+                    <p className="text-zinc-400 mt-2">Sign in to continue listening on Vibora.</p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-7 shadow-2xl">
+                    <div className="space-y-5">
+                    <div>
+                        <label className="block text-sm text-zinc-300 mb-2"> Username or Email </label>
+                        <input type="text" name="usernameOrEmail" value={formData.usernameOrEmail} onChange={handleChange} required placeholder="Enter username or email" className="w-full px-4 py-3 rounded-xl bg-zinc-900/80 border border-white/10 text-white placeholder:text-zinc-600 outline-none focus:border-purple-500 transition-colors"/>
+                    </div>
+                    <div>
+                        <label className="block text-sm text-zinc-300 mb-2"> Password</label>
+                        <input type="password" name="password" value={formData.password} onChange={handleChange} required placeholder="Enter your password" className="w-full px-4 py-3 rounded-xl bg-zinc-900/80 border border-white/10 text-white placeholder:text-zinc-600 outline-none focus:border-purple-500 transition-colors"/>
+                    </div>
+                    </div>
+
+                    {error && (
+                        <div className="mt-5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
+                            <p className="text-sm text-red-400">{error.message || "Unable to login."}</p>
+                        </div>
+                    )}
+
+                    <button type="submit" disabled={loading} className="w-full mt-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all shadow-lg shadow-purple-900/30"> {loading ? "Signing in..." : "Sign In"}</button>
+
+                    <p className="text-center text-sm text-zinc-400 mt-6">Don't have an account?{" "}
+                     <Link to="/register" className="text-purple-400 hover:text-purple-300 font-medium"> Create one</Link>
+                    </p>
+
+                </form>
+            </div>
+        </div>
+    );
+};
+
+export default Login;
+
+import React from "react";
+import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
+import { registerUser } from "../Redux/Slices/authSlice";
+
+const Register = () => {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
+    const { loading, error } = useSelector((state) => state.auth);
+
+    const [formData, setFormData] = useState({
+        username: "",
+        email: "",
+        password: "",
+        role: "user"
+    });
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({...prev,[name]: value}));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const result = await dispatch(registerUser(formData));
+        if (registerUser.fulfilled.match(result)) {
+            navigate("/login");
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-purple-950 text-white flex items-center justify-center px-4 py-10">
+            <div className="w-full max-w-md">
+                <div className="text-center mb-8">
+                    <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-purple-500 via-fuchsia-500 to-pink-500 flex items-center justify-center shadow-xl shadow-purple-900/30">
+                        <span className="text-2xl font-bold">V</span>
+                    </div>
+                    <p className="text-2xl font-bold mt-4">Create your account</p>
+                    <p className="text-zinc-400 mt-2">Join Vibora and start listening.</p>
+                </div>
+                <form onSubmit={handleSubmit} className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-3xl p-7 shadow-2xl">
+                    <div className="space-y-5">
+                    <div>
+                        <label className="block text-sm text-zinc-300 mb-2"> Username </label>
+                        <input type="text" name="username" value={formData.username} onChange={handleChange} required placeholder="Choose a username" className="w-full px-4 py-3 rounded-xl bg-zinc-900/80 border border-white/10 text-white placeholder:text-zinc-600 outline-none focus:border-purple-500 transition-colors"/>
+                    </div>
+                    <div>
+                        <label className="block text-sm text-zinc-300 mb-2">Email</label>
+                        <input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="Enter your email" className="w-full px-4 py-3 rounded-xl bg-zinc-900/80 border border-white/10 text-white placeholder:text-zinc-600 outline-none focus:border-purple-500 transition-colors"/>
+                    </div>
+                    <div>
+                        <label className="block text-sm text-zinc-300 mb-2">Password</label>
+                        <input type="password" name="password" value={formData.password} onChange={handleChange} required placeholder="Create a password" className="w-full px-4 py-3 rounded-xl bg-zinc-900/80 border border-white/10 text-white placeholder:text-zinc-600 outline-none focus:border-purple-500 transition-colors"/>
+                    </div>
+                     <div>
+                         <label className="block text-sm text-zinc-300 mb-2">Account Type</label>
+                         <select name="role" value={formData.role} onChange={handleChange} className="w-full px-4 py-3 rounded-xl bg-zinc-900/80 border border-white/10 text-white outline-none focus:border-purple-500 transition-colors">
+                             <option value="user">Listener</option>
+                             <option value="artist">Artist</option>
+                         </select>
+                     </div>
+                    </div>
+                    {error?.errors && (
+                        <div className="mt-5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 space-y-1">
+                            {Object.values(error.errors).flat().map((message, index) => (
+                                <p key={index} className="text-sm text-red-400">{message}</p>
+                            ))}
+                        </div>
+                    )}
+                    {error?.message && !error?.errors && (
+                        <div className="mt-5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
+                            <p className="text-sm text-red-400">{error.message}</p>
+                        </div>
+                    )}
+                    <button type="submit" disabled={loading} className="w-full mt-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all shadow-lg shadow-purple-900/30"> {loading ? "Creating account..." : "Create Account"}</button>
+                    <p className="text-center text-sm text-zinc-400 mt-6">Already have an account?{" "}
+                        <Link to="/login" className="text-purple-400 hover:text-purple-300 font-medium"> Sign in</Link>
+                    </p>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+export default Register;
+
+import React from "react";
+import { useEffect, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { getSongs, deleteSong } from "../Redux/Slices/musicSlice";
+import { playSong } from "../Redux/Slices/playerSlice";
+
+
+const Songs = () => {
+
+    const dispatch = useDispatch();
+    const {songs,page,hasNextPage,loading,loadingMore,error} = useSelector((state) => state.music);
+    const { user } = useSelector((state) => state.auth);
+    const loadMoreRef = useRef(null);
+
+    useEffect(() => {
+        if (songs.length === 0) {
+            dispatch(getSongs(1));
+        }
+    }, [dispatch, songs.length]);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const target = entries[0];
+                if (target.isIntersecting && hasNextPage && !loading && !loadingMore) {dispatch(getSongs(page + 1));}
+            },
+            {threshold: 0.1}
+        );
+        if (loadMoreRef.current) {
+            observer.observe(loadMoreRef.current);
+        }
+        return () => {
+            observer.disconnect();
+        };
+    }, [dispatch,page,hasNextPage,loading,loadingMore]);
+
+    const handlePlaySong = (song, index) => {
+        dispatch(
+            playSong({
+                song,
+                queue: songs,
+                index
+            })
+        );
+    };
+
+    const handleDeleteSong = async (id) => {
+        const result = await dispatch(deleteSong(id));
+        if (deleteSong.fulfilled.match(result)) {
+            console.log("Song deleted successfully");
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex min-h-[60vh] items-center justify-center text-white">Loading songs...</div>
+        );
+    }
+
+    if (error && songs.length === 0) {
+        return (
+            <div className="flex min-h-[60vh] items-center justify-center text-red-400">{error}</div>
+        );
+    }
+
+    return (
+        <div className="min-h-full px-6 py-8 text-white">
+            <div className="mb-8">
+                <h1 className="text-3xl font-bold">Songs</h1>
+                <p className="mt-2 text-gray-400">Explore all available songs</p>
+            </div>
+
+            <div className="space-y-3">
+                {songs.map((song, index) => (
+                    <div key={song._id} className="group flex items-center gap-4 rounded-xl bg-white/5 px-4 py-3 transition hover:bg-white/10">
+                        <button onClick={() => handlePlaySong(song, index)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-600 text-white transition hover:bg-purple-500">▶</button>
+                        <div className="min-w-0 flex-1">
+                            <h3 className="truncate font-medium">{song.title}</h3>
+                            <p className="text-sm text-gray-400">{song.artist?.username}</p>
+                        </div>
+
+                        {user?._id === song.artist?._id && (
+                            <button onClick={() => handleDeleteSong(song._id)} className="rounded-lg px-3 py-2 text-sm text-white opacity-0 transition hover:bg-red-500/70 group-hover:opacity-100" >Delete</button>
+                        )}
+                    </div>
+                ))}
+            </div>
+
+            <div ref={loadMoreRef} className="flex min-h-20 items-center justify-center" >
+                {loadingMore && (
+                    <p className="text-sm text-gray-400">Loading more songs...</p>
+                )}
+                {!hasNextPage && songs.length > 0 && (
+                    <p className="text-sm text-gray-500">You've reached the end.</p>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
+export default Songs;
+
+
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import api from "../../Services/api";
+
+export const getAlbums = createAsyncThunk("album/getAlbums",
+    async (page = 1, { rejectWithValue }) => {
+        try {
+            const response = await api.get(`/music/Albums?page=${page}`);
+            return {
+                Albums: response.data.Albums,
+                pagination: response.data.pagination
+            };
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || "Failed to fetch albums");
+        }
+    }
+);
+
+export const getAlbumById = createAsyncThunk("album/getAlbumById",
+    async (id, { rejectWithValue }) => {
+        try {
+            const response = await api.get(`/music/Album/${id}`);
+            return response.data.album;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || "Failed to fetch album");
+        }
+    }
+);
+
+export const createAlbum = createAsyncThunk("album/createAlbum",
+    async (albumData, { rejectWithValue }) => {
+        try {
+            const response = await api.post("/music/createAlbum",albumData);
+            return response.data.album;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || "Failed to create album");
+        }
+    }
+);
+
+export const editAlbum = createAsyncThunk("album/editAlbum",
+    async ({ id, albumData }, { rejectWithValue }) => {
+        try {
+            const response = await api.patch(`/music/editAlbum/${id}`,albumData);
+            return response.data.album;
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || "Failed to edit album");
+        }
+    }
+);
+
+export const deleteAlbum = createAsyncThunk("album/deleteAlbum",
+    async (id, { rejectWithValue }) => {
+        try {
+            const response = await api.delete(`/music/deleteAlbum/${id}`);
+            return {
+                id,
+                message: response.data.message
+            };
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || "Failed to delete album");
+        }
+    }
+);
+
+const initialState = {
+    albums: [],
+    page: 1,
+    hasNextPage: true,
+    totalAlbums: 0,
+    currentAlbum: null,
+    loading: false,
+    loadingMore: false,
+    error: null
+};
+
+const albumSlice = createSlice({
+    name: "album",
+    initialState,
+    reducers: {},
+    extraReducers: (builder) => {
+        builder
+            .addCase(getAlbums.pending, (state, action) => {
+                const page = action.meta.arg;
+                state.error = null;
+                if (page === 1) {
+                    state.loading = true;
+                } else {
+                    state.loadingMore = true;
+                }
+            })
+
+            .addCase(getAlbums.fulfilled, (state, action) => {
+                const { Albums, pagination } = action.payload;
+                const page = pagination.page;
+                state.loading = false;
+                state.loadingMore = false;
+                state.page = page;
+                state.hasNextPage = pagination.hasNextPage;
+                state.totalAlbums = pagination.totalAlbums;
+                if (page === 1) {
+                    state.albums = Albums;
+                } else {
+                    state.albums = [...state.albums,...Albums];
+                }
+            })
+
+            .addCase(getAlbums.rejected, (state, action) => {
+                state.loading = false;
+                state.loadingMore = false;
+                state.error = action.payload;
+            })
+
+            .addCase(getAlbumById.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+                state.currentAlbum = null;
+            })
+
+            .addCase(getAlbumById.fulfilled, (state, action) => {
+                state.loading = false;
+                state.currentAlbum = action.payload;
+            })
+
+            .addCase(getAlbumById.rejected, (state, action) => {
+                state.loading = false;
+                state.currentAlbum = null;
+                state.error = action.payload;
+            })
+
+            .addCase(createAlbum.fulfilled, (state, action) => {
+                state.albums.unshift(action.payload);
+                state.totalAlbums += 1;
+            })
+
+            .addCase(editAlbum.fulfilled, (state, action) => {
+                const updatedAlbum = action.payload;
+                const index = state.albums.findIndex(
+                    (album) => album._id === updatedAlbum._id
+                );
+                if (index !== -1) {
+                    state.albums[index] = updatedAlbum;
+                }
+                if (
+                    state.currentAlbum &&
+                    state.currentAlbum._id === updatedAlbum._id
+                ) {
+                    state.currentAlbum = updatedAlbum;
+                }
+            })
+
+            .addCase(deleteAlbum.fulfilled, (state, action) => {
+                state.albums = state.albums.filter(
+                    (album) => album._id !== action.payload.id
+                );
+                state.totalAlbums = Math.max(
+                    state.totalAlbums - 1,
+                    0
+                );
+                if (
+                    state.currentAlbum &&
+                    state.currentAlbum._id === action.payload.id
+                ) {
+                    state.currentAlbum = null;
+                }
+            });
+    }
+});
+
+export default albumSlice.reducer;
+
+
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+
+import api, {setAccessToken,clearAccessToken} from "../../Services/api";
+
+export const registerStart = createAsyncThunk("auth/registerStart",
+
+    async (data, { rejectWithValue }) => {
+        try {
+            const response = await api.post("/auth/register/start",data);
+            return response.data;
+
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message ||"Could not start registration.");
+        }
+    }
+);
+
+export const verifyRegisterEmail = createAsyncThunk("auth/verifyRegisterEmail",
+
+    async (data, { rejectWithValue }) => {
+        try {
+            const response = await api.post("/auth/register/verify-email",data);
+            return response.data;
+
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message ||"Email verification failed.");
+        }
+    }
+);
+
+export const verifyRegisterMobile = createAsyncThunk("auth/verifyRegisterMobile",
+
+    async (data, { rejectWithValue }) => {
+        try {
+            const response = await api.post("/auth/register/verify-mobile",data);
+
+            return response.data;
+
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message ||"Mobile verification failed.");
+        }
+    }
+);
+
+export const resendRegisterOTP = createAsyncThunk("auth/resendRegisterOTP",
+
+    async (data, { rejectWithValue }) => {
+        try {
+            const response = await api.post("/auth/register/resend",data);
+            return response.data;
+
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message ||"Could not resend OTP.");
+        }
+    }
+);
+
+export const completeRegistration = createAsyncThunk("auth/completeRegistration",
+
+    async (data, { rejectWithValue }) => {
+        try {
+            const response = await api.post("/auth/register/complete",data);
+
+            setAccessToken(
+                response.data.accessToken
+            );
+
+            return response.data;
+
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message ||"Registration failed.");
+        }
+    }
+);
+
+export const login = createAsyncThunk("auth/login",
+
+    async (data, { rejectWithValue }) => {
+        try {
+            const response = await api.post("/auth/login",data);
+
+            setAccessToken(
+                response.data.accessToken
+            );
+
+            return response.data;
+
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message ||"Login failed.");
+        }
+    }
+);
+
+export const requestLoginOTP = createAsyncThunk(
+    "auth/requestLoginOTP",
+
+    async (data, { rejectWithValue }) => {
+        try {
+            const response = await api.post("/auth/login/request-otp",data);
+
+            return response.data;
+
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message ||"Could not send OTP.");
+        }
+    }
+);
+
+export const verifyLoginOTP = createAsyncThunk(
+    "auth/verifyLoginOTP",
+
+    async (data, { rejectWithValue }) => {
+        try {
+            const response = await api.post("/auth/login/verify-otp",data);
+
+            setAccessToken(
+                response.data.accessToken
+            );
+
+            return response.data;
+
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message ||"OTP verification failed.");
+        }
+    }
+);
+
+export const refreshAccessToken = createAsyncThunk(
+    "auth/refreshAccessToken",
+
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await api.post(
+                "/auth/refresh"
+            );
+
+            setAccessToken(
+                response.data.accessToken
+            );
+
+            return response.data;
+
+        } catch (error) {
+            clearAccessToken();
+
+            return rejectWithValue(error.response?.data?.message ||"Session expired.");
+        }
+    }
+);
+
+export const getCurrentUser = createAsyncThunk(
+    "auth/getCurrentUser",
+
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await api.get(
+                "/auth/me"
+            );
+
+            return response.data.user;
+
+        } catch (error) {
+            return rejectWithValue(
+                error.response?.data?.message ||
+                "Could not get current user."
+            );
+        }
+    }
+);
+
+export const initializeAuth = createAsyncThunk(
+    "auth/initializeAuth",
+
+    async (_, { dispatch, rejectWithValue }) => {
+        try {
+
+            const refreshResponse =
+                await api.post(
+                    "/auth/refresh"
+                );
+
+            setAccessToken(
+                refreshResponse.data.accessToken
+            );
+
+            const userResponse =
+                await api.get("/auth/me");
+
+            return userResponse.data.user;
+
+        } catch (error) {
+
+            clearAccessToken();
+
+            return rejectWithValue(null);
+        }
+    }
+);
+
+export const logout = createAsyncThunk(
+    "auth/logout",
+
+    async (_, { rejectWithValue }) => {
+        try {
+
+            const response = await api.post(
+                "/auth/logout"
+            );
+
+            clearAccessToken();
+
+            return response.data;
+
+        } catch (error) {
+
+            clearAccessToken();
+
+            return rejectWithValue(
+                error.response?.data?.message ||
+                "Logout failed."
+            );
+        }
+    }
+);
+
+export const logoutAllDevices = createAsyncThunk(
+    "auth/logoutAllDevices",
+
+    async (_, { rejectWithValue }) => {
+        try {
+
+            const response = await api.post(
+                "/auth/logout-all"
+            );
+
+            clearAccessToken();
+
+            return response.data;
+
+        } catch (error) {
+
+            clearAccessToken();
+
+            return rejectWithValue(
+                error.response?.data?.message ||
+                "Could not logout from all devices."
+            );
+        }
+    }
+);
+
+const initialState = {
+    user: null,
+
+    accessToken: null,
+
+    loading: false,
+
+    authChecking: true,
+
+    error: null,
+
+    registrationId: null,
+
+    emailVerified: false,
+
+    mobileVerified: false,
+
+    otpChannel: null,
+
+    registrationLoading: false,
+
+    otpLoading: false
+};
+
+const authSlice = createSlice({
+    name: "auth",
+
+    initialState,
+
+    reducers: {
+        clearAuthError: (state) => {
+            state.error = null;
+        },
+
+        resetRegistration: (state) => {
+            state.registrationId = null;
+            state.emailVerified = false;
+            state.mobileVerified = false;
+            state.registrationLoading = false;
+            state.otpLoading = false;
+            state.error = null;
+        }
+    },
+
+    extraReducers: (builder) => {
+
+        builder
+
+            .addCase(registerStart.pending, (state) => {
+                state.registrationLoading = true;
+                state.error = null;
+            })
+
+            .addCase(registerStart.fulfilled, (state, action) => {
+                state.registrationLoading = false;
+
+                state.registrationId =
+                    action.payload.registrationId;
+
+                state.emailVerified = false;
+                state.mobileVerified = false;
+            })
+
+            .addCase(registerStart.rejected, (state, action) => {
+                state.registrationLoading = false;
+
+                state.error = action.payload;
+            })
+
+            .addCase(verifyRegisterEmail.pending, (state) => {
+                state.otpLoading = true;
+                state.error = null;
+            })
+
+            .addCase(verifyRegisterEmail.fulfilled, (state, action) => {
+                state.otpLoading = false;
+
+                state.emailVerified =
+                    action.payload.emailVerified;
+            })
+
+            .addCase(verifyRegisterEmail.rejected, (state, action) => {
+                state.otpLoading = false;
+
+                state.error = action.payload;
+            })
+
+            .addCase(verifyRegisterMobile.pending, (state) => {
+                state.otpLoading = true;
+                state.error = null;
+            })
+
+            .addCase(verifyRegisterMobile.fulfilled, (state, action) => {
+                state.otpLoading = false;
+
+                state.mobileVerified =
+                    action.payload.mobileVerified;
+            })
+
+            .addCase(verifyRegisterMobile.rejected, (state, action) => {
+                state.otpLoading = false;
+
+                state.error = action.payload;
+            })
+
+            .addCase(resendRegisterOTP.pending, (state) => {
+                state.otpLoading = true;
+                state.error = null;
+            })
+
+            .addCase(resendRegisterOTP.fulfilled, (state) => {
+                state.otpLoading = false;
+            })
+
+            .addCase(resendRegisterOTP.rejected, (state, action) => {
+                state.otpLoading = false;
+
+                state.error = action.payload;
+            })
+
+            .addCase(completeRegistration.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+
+            .addCase(completeRegistration.fulfilled, (state, action) => {
+                state.loading = false;
+
+                state.user =
+                    action.payload.user;
+
+                state.accessToken =
+                    action.payload.accessToken;
+
+                state.registrationId = null;
+                state.emailVerified = false;
+                state.mobileVerified = false;
+            })
+
+            .addCase(completeRegistration.rejected, (state, action) => {
+                state.loading = false;
+
+                state.error = action.payload;
+            })
+
+            .addCase(login.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+
+            .addCase(login.fulfilled, (state, action) => {
+                state.loading = false;
+
+                state.user =
+                    action.payload.user;
+
+                state.accessToken =
+                    action.payload.accessToken;
+            })
+
+            .addCase(login.rejected, (state, action) => {
+                state.loading = false;
+
+                state.error = action.payload;
+            })
+
+            .addCase(requestLoginOTP.pending, (state) => {
+                state.otpLoading = true;
+                state.error = null;
+            })
+
+            .addCase(requestLoginOTP.fulfilled, (state, action) => {
+                state.otpLoading = false;
+
+                state.otpChannel =
+                    action.payload.channel;
+            })
+
+            .addCase(requestLoginOTP.rejected, (state, action) => {
+                state.otpLoading = false;
+
+                state.error = action.payload;
+            })
+
+            .addCase(verifyLoginOTP.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+
+            .addCase(verifyLoginOTP.fulfilled, (state, action) => {
+                state.loading = false;
+
+                state.user =
+                    action.payload.user;
+
+                state.accessToken =
+                    action.payload.accessToken;
+
+                state.otpChannel = null;
+            })
+
+            .addCase(verifyLoginOTP.rejected, (state, action) => {
+                state.loading = false;
+
+                state.error = action.payload;
+            })
+
+            .addCase(refreshAccessToken.fulfilled, (state, action) => {
+                state.accessToken =
+                    action.payload.accessToken;
+            })
+
+            .addCase(refreshAccessToken.rejected, (state) => {
+                state.accessToken = null;
+                state.user = null;
+            })
+
+            .addCase(getCurrentUser.fulfilled, (state, action) => {
+                state.user = action.payload;
+            })
+
+            .addCase(getCurrentUser.rejected, (state) => {
+                state.user = null;
+            })
+
+            .addCase(initializeAuth.pending, (state) => {
+                state.authChecking = true;
+            })
+
+            .addCase(initializeAuth.fulfilled, (state, action) => {
+                state.authChecking = false;
+                state.user = action.payload;
+            })
+
+            .addCase(initializeAuth.rejected, (state) => {
+                state.authChecking = false;
+                state.user = null;
+                state.accessToken = null;
+            })
+
+            .addCase(logout.fulfilled, (state) => {
+                state.user = null;
+                state.accessToken = null;
+            })
+
+            .addCase(logout.rejected, (state) => {
+                state.user = null;
+                state.accessToken = null;
+            })
+
+            .addCase(logoutAllDevices.fulfilled, (state) => {
+                state.user = null;
+                state.accessToken = null;
+            })
+
+            .addCase(logoutAllDevices.rejected, (state) => {
+                state.user = null;
+                state.accessToken = null;
+            });
+    }
+});
+
+export const {clearAuthError,resetRegistration} = authSlice.actions;
+
+export default authSlice.reducer;
+
+
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import api from "../../Services/api";
+
+
+export const getSongs = createAsyncThunk("music/getSongs",
+    async (page = 1, { rejectWithValue }) => {
+        try {
+            const response = await api.get(`/music/Songs?page=${page}`);
+            return {
+                songs: response.data.songs,
+                pagination: response.data.pagination
+            };
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || "Failed to fetch songs");
+        }
+    }
+);
+
+
+export const deleteSong = createAsyncThunk(
+    "music/deleteSong",
+    async (id, { rejectWithValue }) => {
+        try {
+            const response = await api.delete(`/music/deleteMusic/${id}`);
+            return {
+                id,
+                message: response.data.message
+            };
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.message || "Failed to delete song");
+        }
+    }
+);
+
+
+const initialState = {
+    songs: [],
+    page: 1,
+    hasNextPage: true,
+    totalSongs: 0,
+    loading: false,
+    loadingMore: false,
+    error: null
+};
+
+
+const musicSlice = createSlice({
+    name: "music",
+    initialState,
+    reducers: {},
+
+    extraReducers: (builder) => {
+        builder
+            .addCase(getSongs.pending, (state, action) => {
+                const page = action.meta.arg;
+                state.error = null;
+                if (page === 1) {
+                    state.loading = true;
+                } else {
+                    state.loadingMore = true;
+                }
+            })
+            .addCase(getSongs.fulfilled, (state, action) => {
+                const { songs, pagination } = action.payload;
+                const page = pagination.page;
+                state.loading = false;
+                state.loadingMore = false;
+                state.page = page;
+                state.hasNextPage = pagination.hasNextPage;
+                state.totalSongs = pagination.totalSongs;
+
+                if (page === 1) {
+                    state.songs = songs;
+                } else {
+                    state.songs = [...state.songs, ...songs];
+                }
+            })
+            .addCase(getSongs.rejected, (state, action) => {
+                state.loading = false;
+                state.loadingMore = false;
+                state.error = action.payload;
+            })
+            .addCase(deleteSong.fulfilled, (state, action) => {
+                state.songs = state.songs.filter((song) => song._id !== action.payload.id);
+                state.totalSongs = Math.max(
+                    state.totalSongs - 1,0);
+                })
+            .addCase(deleteSong.rejected, (state, action) => {
+                state.error = action.payload;
+            });
+    }
+});
+
+export default musicSlice.reducer;
+
+
+import { createSlice } from "@reduxjs/toolkit";
+
+const initialState = {
+    currentSong: null,
+    isPlaying: false,
+    queue: [],
+    currentIndex: -1,
+    volume: 50
+};
+
+const playerSlice = createSlice({
+    name: "player",
+    initialState,
+    reducers: {
+        playSong: (state, action) => {
+            const { song, queue, index } = action.payload;
+            state.currentSong = song;
+            state.queue = queue;
+            state.currentIndex = index;
+            state.isPlaying = true;
+        },
+
+        pauseSong: (state) => {
+            state.isPlaying = false;
+        },
+
+        resumeSong: (state) => {
+            if (state.currentSong) {
+                state.isPlaying = true;
+            }
+        },
+
+        nextSong: (state) => {
+            if (state.queue.length === 0) {
+                return;
+            }
+
+            const nextIndex = state.currentIndex + 1;
+
+            if (nextIndex >= state.queue.length) {
+                state.isPlaying = false;
+                return;
+            }
+
+            state.currentIndex = nextIndex;
+            state.currentSong = state.queue[nextIndex];
+            state.isPlaying = true;
+        },
+
+        previousSong: (state) => {
+            if (state.queue.length === 0) {
+                return;
+            }
+
+            const previousIndex = state.currentIndex - 1;
+
+            if (previousIndex < 0) {
+                state.currentIndex = 0;
+                state.currentSong = state.queue[0];
+                state.isPlaying = true;
+                return;
+            }
+
+            state.currentIndex = previousIndex;
+            state.currentSong = state.queue[previousIndex];
+            state.isPlaying = true;
+        },
+
+        setVolume: (state, action) => {
+            state.volume = action.payload;
+        },
+
+        clearPlayer: (state) => {
+            state.currentSong = null;
+            state.isPlaying = false;
+            state.queue = [];
+            state.currentIndex = -1;
+        }
+    }
+});
+
+export const {playSong,pauseSong,resumeSong,nextSong,previousSong,setVolume,clearPlayer} = playerSlice.actions;
+export default playerSlice.reducer;
+
+
+
+import { configureStore } from "@reduxjs/toolkit";
+
+import authReducer from "./Slices/authSlice";
+
+import musicReducer from "./Slices/musicSlice";
+
+import albumReducer from "./Slices/albumSlice";
+
+import playerReducer from "./Slices/playerSlice";
+
+import searchReducer from "./Slices/SearchSlice";
+
+export const store = configureStore({
+
+    reducer: {
+
+        auth: authReducer,
+
+        music: musicReducer,
+
+        album: albumReducer,
+
+        player: playerReducer,
+
+        search: searchReducer
+
+    }
+
+});
+
+
+import axios from "axios";
+
+const api = axios.create({
+    baseURL: import.meta.env.VITE_API_URL,
+    withCredentials: true
+});
+
+let accessToken = null;
+
+export const setAccessToken = (token) => {
+    accessToken = token;
+};
+
+export const clearAccessToken = () => {
+    accessToken = null;
+};
+
+api.interceptors.request.use(
+    (config) => {
+        if (accessToken) {
+            config.headers.Authorization = `Bearer ${accessToken}`;
+        }
+
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
+let isRefreshing = false;
+let refreshSubscribers = [];
+
+const subscribeToRefresh = (callback) => {
+    refreshSubscribers.push(callback);
+};
+
+const notifyRefreshSubscribers = (token) => {
+    refreshSubscribers.forEach((callback) => {
+        callback(token);
+    });
+
+    refreshSubscribers = [];
+};
+
+api.interceptors.response.use(
+    (response) => response,
+
+    async (error) => {
+        const originalRequest = error.config;
+
+        if (
+            error.response?.status !== 401 ||
+            originalRequest?._retry ||
+            originalRequest?.url?.includes("/auth/refresh") ||
+            originalRequest?.url?.includes("/auth/login") ||
+            originalRequest?.url?.includes("/auth/login/request-otp") ||
+            originalRequest?.url?.includes("/auth/login/verify-otp") ||
+            originalRequest?.url?.includes("/auth/register")
+        ) {
+            return Promise.reject(error);
+        }
+
+        if (isRefreshing) {
+            return new Promise((resolve, reject) => {
+                subscribeToRefresh((newToken) => {
+                    if (!newToken) {
+                        reject(error);
+                        return;
+                    }
+                    originalRequest.headers.Authorization =`Bearer ${newToken}`;
+                    resolve(api(originalRequest));
+                });
+            });
+        }
+
+        originalRequest._retry = true;
+        isRefreshing = true;
+
+        try {
+            const response = await api.post("/auth/refresh");
+            const newAccessToken = response.data.accessToken;
+            setAccessToken(newAccessToken);
+
+            notifyRefreshSubscribers(newAccessToken);
+            originalRequest.headers.Authorization =`Bearer ${newAccessToken}`;
+
+            return api(originalRequest);
+
+        } catch (refreshError) {
+
+            notifyRefreshSubscribers(null);
+            clearAccessToken();
+
+            return Promise.reject(refreshError);
+
+        } finally {
+            isRefreshing = false;
+        }
+    }
+);
+
+export default api;
+
+
+
+
+
+
+
+this is my complete frontend code , i already told younabout the responsiveness and distorted UI for mobile screen and yess i want all the attributes of the code to be in single line except the event listeners now go ahead and give me the complete code
+
+
+
