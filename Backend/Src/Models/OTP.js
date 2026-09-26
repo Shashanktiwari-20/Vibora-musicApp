@@ -7,48 +7,37 @@ const otpSchema = new mongoose.Schema(
             required: true,
             index: true
         },
-
         channel: {
             type: String,
-            enum: ["email", "sms"],
+            enum: ["email"],
+            default: "email",
             required: true
         },
-
         purpose: {
             type: String,
-            enum: [
-                "register_email",
-                "register_mobile",
-                "login"
-            ],
+            enum: ["register_email", "login"],
             required: true
         },
-
         otpHash: {
             type: String,
             required: true
         },
-
         attempts: {
             type: Number,
             default: 0
         },
-
         maxAttempts: {
             type: Number,
             default: 5
         },
-
         expiresAt: {
             type: Date,
             required: true
         },
-
         usedAt: {
             type: Date,
             default: null
         },
-
         registrationId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "PendingRegistration",

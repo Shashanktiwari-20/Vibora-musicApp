@@ -6,7 +6,6 @@ const {
 } = require("./tokenService");
 
 const { sendEmailOTP } = require("./emailService");
-const { sendSMSOTP } = require("./smsService");
 
 const OTP_EXPIRY = 5 * 60 * 1000;
 const RESEND_COOLDOWN = 60 * 1000;
@@ -14,17 +13,14 @@ const MAX_ATTEMPTS = 5;
 
 const sendOTP = async ({
     identifier,
-    channel,
+    channel = "email",
     purpose,
     registrationId = null
 }) => {
-
-    const normalizedIdentifier =
-        identifier.trim().toLowerCase();
+    const normalizedIdentifier = identifier.trim().toLowerCase();
 
     const latestOTP = await OTP.findOne({
         identifier: normalizedIdentifier,
-        channel,
         purpose,
         registrationId
     }).sort({
@@ -45,9 +41,7 @@ const sendOTP = async ({
         const error = new Error(
             `Please wait ${remaining} seconds before requesting another OTP.`
         );
-
         error.statusCode = 429;
-
         throw error;
     }
 
@@ -61,67 +55,36 @@ const sendOTP = async ({
 
     const otpDocument = await OTP.create({
         identifier: normalizedIdentifier,
-        channel,
+        channel: "email",
         purpose,
         otpHash,
         attempts: 0,
         maxAttempts: MAX_ATTEMPTS,
-        expiresAt: new Date(
-            Date.now() + OTP_EXPIRY
-        ),
+        expiresAt: new Date(Date.now() + OTP_EXPIRY),
         registrationId
     });
 
     try {
-
-        if (channel === "email") {
-
-            await sendEmailOTP(
-                normalizedIdentifier,
-                otp
-            );
-
-        } else if (channel === "sms") {
-
-            await sendSMSOTP({
-                to: normalizedIdentifier,
-                otp
-            });
-
-        } else {
-
-            throw new Error(
-                "Invalid OTP channel."
-            );
-        }
-
+        await sendEmailOTP(normalizedIdentifier, otp);
     } catch (error) {
-
-        await OTP.findByIdAndDelete(
-            otpDocument._id
-        );
-
+        await OTP.findByIdAndDelete(otpDocument._id);
         throw error;
     }
 
     return otpDocument;
 };
 
-
 const verifyOTP = async ({
     identifier,
-    channel,
+    channel = "email",
     purpose,
     otp,
     registrationId = null
 }) => {
-
-    const normalizedIdentifier =
-        identifier.trim().toLowerCase();
+    const normalizedIdentifier = identifier.trim().toLowerCase();
 
     const otpDocument = await OTP.findOne({
         identifier: normalizedIdentifier,
-        channel,
         purpose,
         registrationId,
         usedAt: null
@@ -130,40 +93,20 @@ const verifyOTP = async ({
     });
 
     if (!otpDocument) {
-
-        const error = new Error(
-            "OTP not found."
-        );
-
+        const error = new Error("OTP not found or already verified.");
         error.statusCode = 400;
-
         throw error;
     }
 
-    if (
-        otpDocument.expiresAt.getTime() < Date.now()
-    ) {
-
-        const error = new Error(
-            "OTP has expired."
-        );
-
+    if (otpDocument.expiresAt.getTime() < Date.now()) {
+        const error = new Error("OTP has expired.");
         error.statusCode = 400;
-
         throw error;
     }
 
-    if (
-        otpDocument.attempts >=
-        otpDocument.maxAttempts
-    ) {
-
-        const error = new Error(
-            "Maximum OTP attempts exceeded."
-        );
-
+    if (otpDocument.attempts >= otpDocument.maxAttempts) {
+        const error = new Error("Maximum OTP attempts exceeded.");
         error.statusCode = 429;
-
         throw error;
     }
 
@@ -173,33 +116,22 @@ const verifyOTP = async ({
         otp
     });
 
-    const isValid = compareHash(
-        submittedHash,
-        otpDocument.otpHash
-    );
+    const isValid = compareHash(submittedHash, otpDocument.otpHash);
 
     if (!isValid) {
-
         otpDocument.attempts += 1;
-
         await otpDocument.save();
 
-        const error = new Error(
-            "Invalid OTP."
-        );
-
+        const error = new Error("Invalid OTP.");
         error.statusCode = 400;
-
         throw error;
     }
 
     otpDocument.usedAt = new Date();
-
     await otpDocument.save();
 
     return true;
 };
-
 
 module.exports = {
     sendOTP,
