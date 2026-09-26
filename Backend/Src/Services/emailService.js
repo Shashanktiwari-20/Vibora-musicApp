@@ -1,44 +1,24 @@
 const nodemailer = require("nodemailer");
 const config = require("../Config/config");
 
-const createTransporter = () => {
-    const emailUser = process.env.EMAIL_USER || config.GOOGLE_USER;
-    const emailPass = process.env.EMAIL_PASS || process.env.GOOGLE_APP_PASSWORD;
+const emailUser = process.env.GOOGLE_USER || config.GOOGLE_USER;
+const emailPass = process.env.EMAIL_PASS || process.env.GOOGLE_APP_PASSWORD;
 
-    // 1. App Password authentication (Faster, direct, and avoids token expiration)
-    if (emailPass) {
-        return nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: emailUser,
-                pass: emailPass
-            },
-            connectionTimeout: 10000,
-            greetingTimeout: 10000,
-            socketTimeout: 15000
-        });
-    }
-
-    // 2. Fallback to OAuth2 authentication if configured
-    return nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-            type: "OAuth2",
-            user: config.GOOGLE_USER,
-            clientId: config.GOOGLE_CLIENT_ID,
-            clientSecret: config.GOOGLE_CLIENT_SECRET,
-            refreshToken: config.GOOGLE_REFRESH_TOKEN
-        },
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 15000
-    });
-};
-
-const transporter = createTransporter();
+const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: {
+        user: emailUser,
+        pass: emailPass
+    },
+    connectionTimeout: 15000,
+    greetingTimeout: 10000,
+    socketTimeout: 20000
+});
 
 const sendEmailOTP = async (email, otp) => {
-    const sender = process.env.EMAIL_USER || config.GOOGLE_USER || "no-reply@vibora.com";
+    const sender = emailUser || "no-reply@vibora.com";
 
     return await transporter.sendMail({
         from: `"Vibora Music" <${sender}>`,
